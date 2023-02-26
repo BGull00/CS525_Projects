@@ -101,40 +101,14 @@ class FullyConnected:
         
 #An entire neural network        
 class NeuralNetwork:
-    #initialize with the number of layers, number of neurons in each layer (vector), input size, 
-    #activation (for each layer), the loss function, the learning rate and a 3d matrix of weights 
-    #weights (or else initialize randomly)
-    def __init__(self,numOfLayers,numOfNeurons, inputSize, activation, loss, lr, weights=None):
-        self.numOfLayers = numOfLayers
-        self.numOfNeurons = numOfNeurons
+    #initialize with the input size, loss function, and learning rate
+    def __init__(self, inputSize, loss, lr):
         self.inputSize = inputSize
-        self.activation = activation
         self.loss = loss
         self.lr = lr
-        self.weights = weights
 
-        # weights is a 3D matrix; first index is layer, second index is neuron, third index is weight
-
-        # Init weights randomly if necessary
-        if weights is None:
-            maxNumOfNeuronsInLayer = np.amax(numOfNeurons)
-            maxNumOfWeightsPerNeuron = max(inputSize, maxNumOfNeuronsInLayer) + 1
-            self.weights = np.random.rand(numOfLayers, maxNumOfNeuronsInLayer, maxNumOfWeightsPerNeuron)
-
-            # Set consistent bias values and pad unused weights with zeros
-            biases = np.random.rand(numOfLayers)
-            for layerInd, layerWeights in enumerate(self.weights):
-                numOfNeuronsInLayer = numOfNeurons[layerInd]
-                if layerInd != 0:
-                    numOfNeuronsInPrevLayer = numOfNeurons[layerInd - 1]
-                else:
-                    numOfNeuronsInPrevLayer = inputSize
-                layerWeights[:numOfNeuronsInLayer, numOfNeuronsInPrevLayer+1:] = 0
-                layerWeights[:numOfNeuronsInLayer, numOfNeuronsInPrevLayer] = biases[layerInd]
-                layerWeights[numOfNeuronsInLayer:, :] = 0
-
-        # Create FullyConnected layer objects in numpy array of all layers of neurons
-        self.layers = np.array([FullyConnected(numOfNeurons[layerInd], activation, numOfNeurons[layerInd-1] if layerInd != 0 else inputSize, lr, self.weights[layerInd][:numOfNeurons[layerInd], :numOfNeurons[layerInd-1]+1] if layerInd != 0 else self.weights[layerInd][:numOfNeurons[layerInd], :inputSize+1]) for layerInd in range(numOfLayers)])
+        # Start with a list of no layers
+        self.layers = []
     
     #Given an input, calculate the output (using the layers calculate() method)
     def calculate(self,input):
@@ -176,87 +150,66 @@ class NeuralNetwork:
         
         # Backpropagation
         prevWtimesdelta = self.lossderiv(output, y)
-        for layer in np.flip(self.layers):
+        for layer in reversed(self.layers):
             prevWtimesdelta = layer.calcwdeltas(prevWtimesdelta)
+
+    # Add a layer to the neural network
+    def addLayer(self, layer_type, layer_params=None, weights=None):
+        
+        valid_layer_types = ("FullyConnected", "Convolutional", "MaxPooling", "Flatten")
+
+        if layer_type not in valid_layer_types:
+            raise Exception("addLayer: layer_type of " + str(layer_type) + " is not valid")
+
+        # Make FullyConnected layer
+        if layer_type == valid_layer_types[0]:
+            if layer_params == None or len(layer_params) != 2:
+                raise Exception("addLayer: FullyConnected layer expects two arguments: number of neurons and activation")
+
+            layer = FullyConnected(layer_params[0], layer_params[1], self.inputSize, self.lr, weights)
+            self.inputSize = (layer.numOfNeurons)
+        
+        # Make Convolutional layer
+        elif layer_type == valid_layer_types[1]:
+            if layer_params == None or len(layer_params) != 3:
+                raise Exception("addLayer: Convolutional layer expects three arguments: number of kernels, kernel size, and activation")
+
+            #layer = ConvolutionalLayer(layer_params[0], layer_params[1], layer_params[2], self.inputSize, self.lr, weights)
+            #self.inputSize = 
+
+        # Make MaxPooling layer
+        elif layer_type == valid_layer_types[2]:
+            if layer_params == None or len(layer_params) != 1:
+                raise Exception("addLayer: MaxPooling layer expects one argument: kernel size")
+
+            #layer = MaxPoolingLayer(layer_params[0], self.inputSize)
+            #self.inputSize = 
+
+        # Make Flatten layer
+        elif layer_type == valid_layer_types[3]:
+            if layer_params != None:
+                raise Exception("addLayer: Flatten layer expects no arguments")
+
+            #layer = FlattenLayer(self.inputSize)
+            #self.inputSize = 
+
+        self.layers.append(layer)
+
+
 
 if __name__=="__main__":
 
-    # Get the learning rate as a command line argument
-    lr = 0
-    if(len(sys.argv) >= 2):
-        lr = float(sys.argv[1])
-        print("Learning rate = " + str(lr))
-
-    if (len(sys.argv)<3):
+    if (len(sys.argv)<2):
         print('a good place to test different parts of your code')
         
-    elif (sys.argv[2]=='example'):
-        print('run example from class (single step)')
-        w = np.array([[[.15,.2,.35],[.25,.3,.35]],[[.4,.45,.6],[.5,.55,.6]]])
-        x = np.array([0.05,0.1])
-        y = np.array([0.01,0.99])
 
-        # Build and train example neural net from class
-        nn = NeuralNetwork(2, np.array([2, 2]), 2, 1, 0, lr, w)
-        nn.train(x, y)
-
-        # Print updated weights for example NN
-        print("\n\nWeights after updating:")
-        print(nn.weights)
-
+    elif (sys.argv[1]=='example1'):
+        print('run example1')
         
-    elif(sys.argv[2]=='and'):
-        print('learn and')
-        xData = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-        yData = np.array([[0], [0], [0], [1]])
 
-        nn = NeuralNetwork(1, np.array([1]), 2, 1, 1, lr)
+    elif(sys.argv[1]=='example2'):
+        print('run example2')
+        
 
-        for _ in range(10000):
-            dataInd = np.random.randint(4, size=1)[0]
-            nn.train(xData[dataInd], yData[dataInd])
-
-        print("\n\nPerceptron results after training:")
-        print("Input of (0,0) produces an output of:")
-        print(nn.calculate(xData[0]))
-        print("Input of (0,1) produces an output of:")
-        print(nn.calculate(xData[1]))
-        print("Input of (1,0) produces an output of:")
-        print(nn.calculate(xData[2]))
-        print("Input of (1,1) produces an output of:")
-        print(nn.calculate(xData[3]))
-
-    elif(sys.argv[2]=='xor'):
-        print('learn xor')
-        xData = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-        yData = np.array([[0], [1], [1], [0]])
-
-        perceptron = NeuralNetwork(1, np.array([1]), 2, 1, 1, lr)
-        nn = NeuralNetwork(2, np.array([2, 1]), 2, 1, 1, lr)
-
-        for _ in range(10000):
-            dataInd = np.random.randint(4, size=1)[0]
-            perceptron.train(xData[dataInd], yData[dataInd])
-            nn.train(xData[dataInd], yData[dataInd])
-
-        print("\n\nPerceptron results after training:")
-        print("Input of (0,0) produces an output of:")
-        print(perceptron.calculate(xData[0]))
-        print("Input of (0,1) produces an output of:")
-        print(perceptron.calculate(xData[1]))
-        print("Input of (1,0) produces an output of:")
-        print(perceptron.calculate(xData[2]))
-        print("Input of (1,1) produces an output of:")
-        print(perceptron.calculate(xData[3]))
-
-        print("\n\n")
-
-        print("Neural network with one hidden layer results after training:")
-        print("Input of (0,0) produces an output of:")
-        print(nn.calculate(xData[0]))
-        print("Input of (0,1) produces an output of:")
-        print(nn.calculate(xData[1]))
-        print("Input of (1,0) produces an output of:")
-        print(nn.calculate(xData[2]))
-        print("Input of (1,1) produces an output of:")
-        print(nn.calculate(xData[3]))
+    elif(sys.argv[1]=='example3'):
+        print('run example3')
