@@ -97,13 +97,55 @@ class FullyConnected:
             neuron.updateweight()
 
         return wtimesdeltaSum
-           
+
+
+#A convolutional layer 
+class ConvolutionalLayer:
+    #initialize with the number of kernels in the layer, the size of the kernel (assume it
+    #is square), the activation function for all the neurons in the layer, the dimension of
+    #the inputs, the learning rate, and a vector of weights (or else initilize randomly)
+    def __init__(self, numOfKernels, kernelSize, activation, inputDim, lr, weights=None):
+        self.numOfKernels = numOfKernels
+        self.kernelSize = kernelSize
+        self.activation = activation
+        self.inputDim = inputDim
+        self.lr = lr
+        self.weights = weights
+
+        # Find number of weights per kernel (including bias)
+        numWeightsPerKernel = (kernelSize ** 2) * inputDim[2] + 1
+
+        # Init all weights randomly if necessary (just a 1D vector)
+        if weights is None:
+            self.weights = np.random.rand(numOfKernels * numWeightsPerKernel)
+
+        # Create neuron objects in numpy array of all neurons in layer.
+        # Arrange neurons in a 3D matrix keyed on row, col, and channel.
+        #self.neurons = np.array([[[Neuron(activation, self.weights.shape[0] - 1, lr, self.weights[kernel_ind * numWeightsPerKernel : (kernel_ind+1) * numWeightsPerKernel]) for _ in range(inputDim[0] - kernelSize + 1)] for _ in range(inputDim[1] - kernelSize + 1)] for kernel_ind in range(numOfKernels)])
+        self.neurons = np.array([[[Neuron(activation, self.weights.shape[0] - 1, lr, self.weights[kernel_ind * numWeightsPerKernel : (kernel_ind+1) * numWeightsPerKernel]) for kernel_ind in range(numOfKernels)] for _ in range(inputDim[1] - kernelSize + 1)] for _ in range(inputDim[0] - kernelSize + 1)])
+
+    #calculate the output of all the neurons in the layer and return them as a 3D matrix keyed on row, col, and channel
+    def calculate(self, input):
+        return np.array([[[neuron.calculate(input[row_ind : row_ind + self.kernelSize, col_ind : col_ind + self.kernelSize, : ].flatten()) for neuron in col] for col_ind, col in enumerate(row)] for row_ind, row in enumerate(self.neurons)])
+
+    #given the next layer's w*delta, should run through the neurons calling 
+    #calcpartialderivative() for each (with the correct value), sum up its own w*delta, and then 
+    #update the weights (using the updateweight() method). I should return the sum of w*delta.          
+    def calcwdeltas(self, wtimesdelta):
+        wtimesdeltaSum = 0
+
+        # for neuronInd, neuron in enumerate(self.neurons):
+        #     wtimesdeltaSum += neuron.calcpartialderivative(wtimesdelta[neuronInd])
+        #     neuron.updateweight()
+
+        return wtimesdeltaSum
+
         
 #An entire neural network        
 class NeuralNetwork:
     #initialize with the input size, loss function, and learning rate
     def __init__(self, inputSize, loss, lr):
-        self.inputSize = inputSize
+        self.inputSize = (inputSize,)
         self.loss = loss
         self.lr = lr
 
@@ -153,7 +195,7 @@ class NeuralNetwork:
         for layer in reversed(self.layers):
             prevWtimesdelta = layer.calcwdeltas(prevWtimesdelta)
 
-    # Add a layer to the neural network
+    # Add a layer to the neural network of a given type with given parameters and weights
     def addLayer(self, layer_type, layer_params=None, weights=None):
         
         valid_layer_types = ("FullyConnected", "Convolutional", "MaxPooling", "Flatten")
@@ -166,16 +208,16 @@ class NeuralNetwork:
             if layer_params == None or len(layer_params) != 2:
                 raise Exception("addLayer: FullyConnected layer expects two arguments: number of neurons and activation")
 
-            layer = FullyConnected(layer_params[0], layer_params[1], self.inputSize, self.lr, weights)
-            self.inputSize = (layer.numOfNeurons)
+            layer = FullyConnected(layer_params[0], layer_params[1], self.inputSize[0], self.lr, weights)
+            self.inputSize = (layer.numOfNeurons,)
         
         # Make Convolutional layer
         elif layer_type == valid_layer_types[1]:
             if layer_params == None or len(layer_params) != 3:
                 raise Exception("addLayer: Convolutional layer expects three arguments: number of kernels, kernel size, and activation")
 
-            #layer = ConvolutionalLayer(layer_params[0], layer_params[1], layer_params[2], self.inputSize, self.lr, weights)
-            #self.inputSize = 
+            layer = ConvolutionalLayer(layer_params[0], layer_params[1], layer_params[2], self.inputSize, self.lr, weights)
+            self.inputSize = layer.neurons.shape
 
         # Make MaxPooling layer
         elif layer_type == valid_layer_types[2]:
@@ -193,6 +235,7 @@ class NeuralNetwork:
             #layer = FlattenLayer(self.inputSize)
             #self.inputSize = 
 
+        # Add layer to NeuralNetwork's list of layers
         self.layers.append(layer)
 
 
@@ -201,7 +244,7 @@ if __name__=="__main__":
 
     if (len(sys.argv)<2):
         print('a good place to test different parts of your code')
-        
+
 
     elif (sys.argv[1]=='example1'):
         print('run example1')
