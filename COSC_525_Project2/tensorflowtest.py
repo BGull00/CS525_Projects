@@ -16,22 +16,21 @@ model.add(layers.Conv2D(2, 3, activation='sigmoid'))
 
 # model.layers[0].set_weights([np.full((5, 5, 4, 3), 0.2), np.full(3, 0.2)]) #Shape of weight matrix is (w,h,input_channels,kernels)
 # model.layers[1].set_weights([np.full((3, 3, 3, 2), 0.3), np.full(2, 0.3)]) #Shape of weight matrix is (w,h,input_channels,kernels)
-weights_0 = np.reshape(np.concatenate((np.linspace(0, 0.099, 100), np.linspace(0.101, 0.200, 100), np.linspace(0.202, 0.301, 100))), (5, 5, 4, 3))
-print(weights_0[:, :, :, 0].flatten())
-weights_1 = np.reshape(np.concatenate((np.linspace(0, 0.26, 27), np.linspace(0.28, 0.54, 27))), (3, 3, 3, 2))
-model.layers[0].set_weights([weights_0, np.array([0.100, 0.201, 0.302])]) #Shape of weight matrix is (w,h,input_channels,kernels)
-model.layers[1].set_weights([weights_1, np.array([0.27, 0.55])]) #Shape of weight matrix is (w,h,input_channels,kernels)
+weights_0 = np.reshape(np.linspace(-0.1, 0.199, 300), (5, 5, 4, 3))
+weights_1 = np.reshape(np.linspace(-0.2, 0.33, 54), (3, 3, 3, 2))
+model.layers[0].set_weights([weights_0, np.array([0.200, 0.201, 0.202])]) #Shape of weight matrix is (w,h,input_channels,kernels)
+model.layers[1].set_weights([weights_1, np.array([0.34, 0.35])]) #Shape of weight matrix is (w,h,input_channels,kernels)
 # print(model.summary())
 
 #Setting input. Tensor flow is expecting a 4d array since the first dimension is the batch size (here we set it to one), and third dimension is channels
-img=np.full((1,16,16,4), 0.1)
+img=np.reshape(np.linspace(0, 0.2, 1024), (1,16,16,4))
 
-output=np.full((1,10,10,2), 0.9)
+output=np.reshape(np.linspace(0, 0.2, 200), (1,10,10,2))
 
 #print needed values.
 np.set_printoptions(precision=5)
 # print('model output before:')
-# print(model.predict(img))
+print(model.predict(img))
 sgd = optimizers.SGD(learning_rate=100)
 model.compile(loss='MSE', optimizer=sgd, metrics=['accuracy'])
 history=model.train_on_batch(img,output)

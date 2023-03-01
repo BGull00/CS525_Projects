@@ -114,20 +114,28 @@ class ConvolutionalLayer:
         self.lr = lr
         self.weights = weights
 
-        # Find number of weights per kernel (including bias)
-        self.numWeightsPerKernel = (kernelSize ** 2) * inputDim[2] + 1
+        # Find number of weights per kernel (not including bias)
+        self.numWeightsPerKernel = (kernelSize ** 2) * inputDim[2]
 
-        # Init all weights randomly if necessary (just a 1D vector)
+        # Weights has 4 dimensions (w,h,input_channels,kernels)
+        # Biases has 1 dimension (kernels)
+
         if weights is None:
-            self.weights = np.random.rand(numOfKernels * self.numWeightsPerKernel)
+            # Init all weights randomly if necessary
+            self.weights = np.random.rand(kernelSize, kernelSize, inputDim[2], numOfKernels)
+            self.biases = np.random.rand(numOfKernels)
+        else:
+            # Otherwise, interpret given vector of weights using numpy.reshape and last numOfKernels elements as biases
+            self.weights = weights[:-numOfKernels].reshape(kernelSize, kernelSize, inputDim[2], numOfKernels)
+            self.biases = weights[-numOfKernels:]
 
         # Create neuron objects in numpy array of all neurons in layer.
-        # Arrange neurons in a 3D matrix keyed on row, col, and channel.
-        self.neurons = np.array([[[Neuron(activation, self.weights.shape[0] - 1, lr, self.weights[kernel_ind * self.numWeightsPerKernel : (kernel_ind+1) * self.numWeightsPerKernel]) for kernel_ind in range(numOfKernels)] for _ in range(inputDim[1] - kernelSize + 1)] for _ in range(inputDim[0] - kernelSize + 1)])
+        # Arrange neurons in a 3D matrix  (w,h,channels).
+        self.neurons = np.array([[[Neuron(activation, self.weights.size, lr, np.concatenate((self.weights[:,:,:,kernel_ind].ravel(), self.biases[kernel_ind:(kernel_ind+1)]))) for kernel_ind in range(numOfKernels)] for _ in range(inputDim[1] - kernelSize + 1)] for _ in range(inputDim[0] - kernelSize + 1)])
 
     #calculate the output of all the neurons in the layer and return them as a 3D matrix keyed on row, col, and channel
     def calculate(self, input):
-        return np.array([[[neuron.calculate(input[row_ind : row_ind + self.kernelSize, col_ind : col_ind + self.kernelSize, : ].flatten()) for neuron in col] for col_ind, col in enumerate(row)] for row_ind, row in enumerate(self.neurons)])
+        return np.array([[[self.neurons[width_ind, height_ind, channel_ind].calculate(input[width_ind : width_ind + self.kernelSize, height_ind : height_ind + self.kernelSize, : ].flatten()) for channel_ind in range(self.neurons.shape[2])] for height_ind in range(self.neurons.shape[1])] for width_ind in range(self.neurons.shape[0])])
 
     #given the next layer's w*delta, should run through the neurons calling 
     #calcpartialderivative() for each (with the correct value), sum up its own w*delta, and then 
@@ -280,16 +288,15 @@ if __name__=="__main__":
     if (len(sys.argv)<2):
         print('a good place to test different parts of your code')
 
-        img = np.full((16,16,4), 0.1)
-        output = np.full((10,10,2), 0.9)
+        img = np.reshape(np.linspace(0, 0.2, 1024), (16,16,4))
+        output = np.reshape(np.linspace(0, 0.2, 200), (10,10,2))
 
         nn = NeuralNetwork((16, 16, 4), 0, 0.5)
         # nn.addLayer("Convolutional", (3, 5, 1), np.full(303, 0.2))
         # nn.addLayer("Convolutional", (2, 3, 1), np.full(56, 0.3))
-        nn.addLayer("Convolutional", (3, 5, 1), np.linspace(0, 0.302, 303))
-        nn.addLayer("Convolutional", (2, 3, 1), np.linspace(0, 0.55, 56))
-        print(np.linspace(0, 0.302, 303))
-        # print(nn.calculate(img))
+        nn.addLayer("Convolutional", (3, 5, 1), np.linspace(-0.1, 0.202, 303))
+        nn.addLayer("Convolutional", (2, 3, 1), np.linspace(-0.2, 0.35, 56))
+        print(np.around(nn.calculate(img), 5))
         # nn.train(img, output)
         # print(nn.calculate(img))
         # print(nn.layers[0].weights)
