@@ -52,12 +52,10 @@ class Neuron:
     #be used in the previous layer
     def calcpartialderivative(self, wtimesdelta):
         self.delta = wtimesdelta * self.activationderivative()
-        print("delta = " + str(wtimesdelta) + " * " + str(self.activationderivative()) + " = " + str(self.delta))
         return self.weights * self.delta
     
     #Simply update the weights using the partial derivatives and the leranring weight
     def updateweight(self):
-        print("first new weight -= " + str(self.lr) + " * " + str(self.delta) + " * " + str(self.input[0]) + " = " + str(self.lr * self.delta * self.input[0]))
         self.weights -= self.lr * self.delta * self.input
 
         
@@ -142,44 +140,43 @@ class ConvolutionalLayer:
     #update the weights (using the updateweight() method). I should return the sum of w*delta.          
     def calcwdeltas(self, wtimesdelta):
 
-        # First calculate the weights times delta for every neuron in the layer
-        wtimesdeltas = np.zeros((self.neurons.shape[0], self.neurons.shape[1], self.neurons.shape[2], self.numWeightsPerKernel))
+        # First calculate the weights times delta for every neuron in the layer (output neuron in width dimension, output neuron in height dimension, output neuron channel, width of kernel, height of kernel, kernel channels)
+        wtimesdeltas = np.zeros((self.neurons.shape[0], self.neurons.shape[1], self.neurons.shape[2], self.weights.shape[0], self.weights.shape[1], self.weights.shape[2]))
         for neuron_o_ind, neuron_o in np.ndenumerate(self.neurons):
-            wtimesdeltas[neuron_o_ind] = neuron_o.calcpartialderivative(wtimesdelta[neuron_o_ind])
-            # neuron_o.updateweight()
-
-        # Then update the weights for each kernel
-        del_E_del_ws = np.zeros(self.weights.shape).tolist()
-        for kernel_ind in range(self.numOfKernels):
-            for row_o_ind in range(self.neurons.shape[0]):
-                for col_o_ind in range(self.neurons.shape[1]):
-                    for kernel_row_ind in range(self.kernelSize):
-                        for kernel_col_ind in range(self.kernelSize):
-                            for chan_x_ind in range(self.inputDim[2]):
-                                del_E_del_ws[kernel_ind * self.numWeightsPerKernel + kernel_row_ind * self.kernelSize * self.inputDim[2] + kernel_col_ind * self.inputDim[2] + chan_x_ind] += self.neurons[row_o_ind, col_o_ind, kernel_ind].delta * self.neurons[row_o_ind, col_o_ind, kernel_ind].input[kernel_row_ind * self.kernelSize * self.inputDim[2] + kernel_col_ind * self.inputDim[2] + chan_x_ind]
-                    
-                    # Also have to do biases
-                    del_E_del_ws[(kernel_ind+1) * self.numWeightsPerKernel - 1] += self.neurons[row_o_ind, col_o_ind, kernel_ind].delta
-
-        # Do the shared weights update
-        self.weights -= self.lr * np.asarray(del_E_del_ws)
+            pd = neuron_o.calcpartialderivative(wtimesdelta[neuron_o_ind])
+            wtimesdeltas[neuron_o_ind] = np.reshape(pd[:-1], (self.weights.shape[0], self.weights.shape[1], self.weights.shape[2])) # Reshape output from calcpartialderivative to one kernel size
 
         # Then sum the correct w times deltas together for backpropagation
         wtimesdeltaSum = np.zeros(self.inputDim).tolist()
-        for row_x_ind in range(self.inputDim[0]):
-            for col_x_ind in range(self.inputDim[1]):
+        for width_x_ind in range(self.inputDim[0]):
+            for height_x_ind in range(self.inputDim[1]):
                 for chan_x_ind in range(self.inputDim[2]):
-                    for kernel_row_ind in range(self.kernelSize):
-                        for kernel_col_ind in range(self.kernelSize):
+                    for kernel_width_ind in range(self.kernelSize):
+                        for kernel_height_ind in range(self.kernelSize):
                             for kernel_ind in range(self.numOfKernels):
-                                # print("\n\n")
-                                # print(kernel_row_ind)
-                                # print(self.inputDim[2])
-                                # print(kernel_row_ind * self.kernelSize * self.inputDim[2] + kernel_col_ind * self.inputDim[2] + chan_x_ind)
-                                row_o_ind = row_x_ind - kernel_row_ind
-                                col_o_ind = col_x_ind - kernel_col_ind
-                                if row_o_ind >= 0 and row_o_ind < wtimesdeltas.shape[0] and col_o_ind >= 0 and col_o_ind < wtimesdeltas.shape[1]:
-                                    wtimesdeltaSum[row_x_ind][col_x_ind][chan_x_ind] += wtimesdeltas[row_o_ind, col_o_ind, kernel_ind, kernel_row_ind * self.kernelSize * self.inputDim[2] + kernel_col_ind * self.inputDim[2] + chan_x_ind]
+                                width_o_ind = width_x_ind - kernel_width_ind
+                                height_o_ind = height_x_ind - kernel_height_ind
+                                if width_o_ind >= 0 and width_o_ind < wtimesdeltas.shape[0] and height_o_ind >= 0 and height_o_ind < wtimesdeltas.shape[1]:
+                                    wtimesdeltaSum[width_x_ind][height_x_ind][chan_x_ind] += wtimesdeltas[width_o_ind, height_o_ind, kernel_ind, kernel_width_ind, kernel_height_ind, chan_x_ind]
+
+        # Then update the weights for each kernel
+        del_E_del_ws = np.zeros(self.weights.shape)
+        del_E_del_ws_biases = np.zeros(self.biases.shape).tolist()
+        for kernel_ind in range(self.numOfKernels):
+            for width_o_ind in range(self.neurons.shape[0]):
+                for height_o_ind in range(self.neurons.shape[1]):
+
+                    # Calculate partial derivative of eror with respect to each w
+                    del_E_del_ws[:, :, :, kernel_ind] += self.neurons[width_o_ind, height_o_ind, kernel_ind].delta * np.reshape(self.neurons[width_o_ind, height_o_ind, kernel_ind].input[:-1], (self.weights.shape[0], self.weights.shape[1], self.weights.shape[2]))
+
+                    # And with respect to each bias
+                    del_E_del_ws_biases[kernel_ind] += self.neurons[width_o_ind, height_o_ind, kernel_ind].delta
+
+        # Do the shared weights updates for each kernel
+        self.weights -= self.lr * del_E_del_ws
+        self.biases -= self.lr * np.asarray(del_E_del_ws_biases)
+        for neuron_ind, neuron in np.ndenumerate(self.neurons):
+            neuron.weights = np.concatenate((self.weights[:,:,:,neuron_ind[2]].ravel(), self.biases[neuron_ind[2]:(neuron_ind[2]+1)]))
 
         return np.asarray(wtimesdeltaSum)
 
@@ -289,17 +286,22 @@ if __name__=="__main__":
         print('a good place to test different parts of your code')
 
         img = np.reshape(np.linspace(0, 0.2, 1024), (16,16,4))
-        output = np.reshape(np.linspace(0, 0.2, 200), (10,10,2))
+        output = np.reshape(np.linspace(0, 0.2, 384), (8,8,6))
 
-        nn = NeuralNetwork((16, 16, 4), 0, 0.5)
-        # nn.addLayer("Convolutional", (3, 5, 1), np.full(303, 0.2))
-        # nn.addLayer("Convolutional", (2, 3, 1), np.full(56, 0.3))
+        nn = NeuralNetwork((16, 16, 4), 0, 0.26041667)
+
         nn.addLayer("Convolutional", (3, 5, 1), np.linspace(-0.1, 0.202, 303))
         nn.addLayer("Convolutional", (2, 3, 1), np.linspace(-0.2, 0.35, 56))
+        nn.addLayer("Convolutional", (6, 3, 1), np.linspace(-0.4, 0.73, 114))
+
         print(np.around(nn.calculate(img), 5))
-        # nn.train(img, output)
-        # print(nn.calculate(img))
+
+        nn.train(img, output)
+
+        print(nn.calculate(img))
+
         # print(nn.layers[0].weights)
+        # print(nn.layers[0].biases)
 
 
 
