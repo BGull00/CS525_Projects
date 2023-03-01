@@ -217,10 +217,10 @@ class NeuralNetwork:
     def lossderiv(self,yp,y):
         if self.loss == 0:
             # Derivative of sum of square errors loss function
-            return -2 * (y-yp)
+            return -2 * (y-yp) / yp.size
         else:
             # Derivative of binary cross entropy loss function
-            return -((y/yp) - ((1-y)/(1-yp)))
+            return -((y/yp) - ((1-y)/(1-yp))) / yp.size
     
     #Given a single input and desired output preform one step of backpropagation (including a 
     #forward pass, getting the derivative of the loss, and then calling calcwdeltas for layers 
@@ -288,13 +288,11 @@ if __name__=="__main__":
         img = np.reshape(np.linspace(0, 0.2, 1024), (16,16,4))
         output = np.reshape(np.linspace(0, 0.2, 384), (8,8,6))
 
-        nn = NeuralNetwork((16, 16, 4), 0, 0.26041667)
+        nn = NeuralNetwork((16, 16, 4), 0, 100)
 
         nn.addLayer("Convolutional", (3, 5, 1), np.linspace(-0.1, 0.202, 303))
         nn.addLayer("Convolutional", (2, 3, 1), np.linspace(-0.2, 0.35, 56))
         nn.addLayer("Convolutional", (6, 3, 1), np.linspace(-0.4, 0.73, 114))
-
-        print(np.around(nn.calculate(img), 5))
 
         nn.train(img, output)
 
@@ -303,6 +301,10 @@ if __name__=="__main__":
         # print(nn.layers[0].weights)
         # print(nn.layers[0].biases)
 
+
+        # nn = NeuralNetwork((8,), 0, 100)
+        # print(np.swapaxes(np.reshape(np.linspace(-0.4, 0.67, 108), (9, 12)), 0, 1))
+        # nn.addLayer("FullyConnected", (12, 1), np.swapaxes(np.reshape(np.linspace(-0.4, 0.67, 108), (9, 12)), 0, 1))
 
 
     elif (sys.argv[1]=='example1'):
