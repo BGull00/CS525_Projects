@@ -52,10 +52,12 @@ class Neuron:
     #be used in the previous layer
     def calcpartialderivative(self, wtimesdelta):
         self.delta = wtimesdelta * self.activationderivative()
+        print("delta = " + str(wtimesdelta) + " * " + str(self.activationderivative()) + " = " + str(self.delta))
         return self.weights * self.delta
     
     #Simply update the weights using the partial derivatives and the leranring weight
     def updateweight(self):
+        print("first new weight -= " + str(self.lr) + " * " + str(self.delta) + " * " + str(self.input[0]) + " = " + str(self.lr * self.delta * self.input[0]))
         self.weights -= self.lr * self.delta * self.input
 
         
@@ -113,16 +115,15 @@ class ConvolutionalLayer:
         self.weights = weights
 
         # Find number of weights per kernel (including bias)
-        numWeightsPerKernel = (kernelSize ** 2) * inputDim[2] + 1
+        self.numWeightsPerKernel = (kernelSize ** 2) * inputDim[2] + 1
 
         # Init all weights randomly if necessary (just a 1D vector)
         if weights is None:
-            self.weights = np.random.rand(numOfKernels * numWeightsPerKernel)
+            self.weights = np.random.rand(numOfKernels * self.numWeightsPerKernel)
 
         # Create neuron objects in numpy array of all neurons in layer.
         # Arrange neurons in a 3D matrix keyed on row, col, and channel.
-        #self.neurons = np.array([[[Neuron(activation, self.weights.shape[0] - 1, lr, self.weights[kernel_ind * numWeightsPerKernel : (kernel_ind+1) * numWeightsPerKernel]) for _ in range(inputDim[0] - kernelSize + 1)] for _ in range(inputDim[1] - kernelSize + 1)] for kernel_ind in range(numOfKernels)])
-        self.neurons = np.array([[[Neuron(activation, self.weights.shape[0] - 1, lr, self.weights[kernel_ind * numWeightsPerKernel : (kernel_ind+1) * numWeightsPerKernel]) for kernel_ind in range(numOfKernels)] for _ in range(inputDim[1] - kernelSize + 1)] for _ in range(inputDim[0] - kernelSize + 1)])
+        self.neurons = np.array([[[Neuron(activation, self.weights.shape[0] - 1, lr, self.weights[kernel_ind * self.numWeightsPerKernel : (kernel_ind+1) * self.numWeightsPerKernel]) for kernel_ind in range(numOfKernels)] for _ in range(inputDim[1] - kernelSize + 1)] for _ in range(inputDim[0] - kernelSize + 1)])
 
     #calculate the output of all the neurons in the layer and return them as a 3D matrix keyed on row, col, and channel
     def calculate(self, input):
@@ -132,20 +133,54 @@ class ConvolutionalLayer:
     #calcpartialderivative() for each (with the correct value), sum up its own w*delta, and then 
     #update the weights (using the updateweight() method). I should return the sum of w*delta.          
     def calcwdeltas(self, wtimesdelta):
-        wtimesdeltaSum = 0
 
-        # for neuronInd, neuron in enumerate(self.neurons):
-        #     wtimesdeltaSum += neuron.calcpartialderivative(wtimesdelta[neuronInd])
-        #     neuron.updateweight()
+        # First calculate the weights times delta for every neuron in the layer
+        wtimesdeltas = np.zeros((self.neurons.shape[0], self.neurons.shape[1], self.neurons.shape[2], self.numWeightsPerKernel))
+        for neuron_o_ind, neuron_o in np.ndenumerate(self.neurons):
+            wtimesdeltas[neuron_o_ind] = neuron_o.calcpartialderivative(wtimesdelta[neuron_o_ind])
+            # neuron_o.updateweight()
 
-        return wtimesdeltaSum
+        # Then update the weights for each kernel
+        del_E_del_ws = np.zeros(self.weights.shape).tolist()
+        for kernel_ind in range(self.numOfKernels):
+            for row_o_ind in range(self.neurons.shape[0]):
+                for col_o_ind in range(self.neurons.shape[1]):
+                    for kernel_row_ind in range(self.kernelSize):
+                        for kernel_col_ind in range(self.kernelSize):
+                            for chan_x_ind in range(self.inputDim[2]):
+                                del_E_del_ws[kernel_ind * self.numWeightsPerKernel + kernel_row_ind * self.kernelSize * self.inputDim[2] + kernel_col_ind * self.inputDim[2] + chan_x_ind] += self.neurons[row_o_ind, col_o_ind, kernel_ind].delta * self.neurons[row_o_ind, col_o_ind, kernel_ind].input[kernel_row_ind * self.kernelSize * self.inputDim[2] + kernel_col_ind * self.inputDim[2] + chan_x_ind]
+                    
+                    # Also have to do biases
+                    del_E_del_ws[(kernel_ind+1) * self.numWeightsPerKernel - 1] += self.neurons[row_o_ind, col_o_ind, kernel_ind].delta
+
+        # Do the shared weights update
+        self.weights -= self.lr * np.asarray(del_E_del_ws)
+
+        # Then sum the correct w times deltas together for backpropagation
+        wtimesdeltaSum = np.zeros(self.inputDim).tolist()
+        for row_x_ind in range(self.inputDim[0]):
+            for col_x_ind in range(self.inputDim[1]):
+                for chan_x_ind in range(self.inputDim[2]):
+                    for kernel_row_ind in range(self.kernelSize):
+                        for kernel_col_ind in range(self.kernelSize):
+                            for kernel_ind in range(self.numOfKernels):
+                                # print("\n\n")
+                                # print(kernel_row_ind)
+                                # print(self.inputDim[2])
+                                # print(kernel_row_ind * self.kernelSize * self.inputDim[2] + kernel_col_ind * self.inputDim[2] + chan_x_ind)
+                                row_o_ind = row_x_ind - kernel_row_ind
+                                col_o_ind = col_x_ind - kernel_col_ind
+                                if row_o_ind >= 0 and row_o_ind < wtimesdeltas.shape[0] and col_o_ind >= 0 and col_o_ind < wtimesdeltas.shape[1]:
+                                    wtimesdeltaSum[row_x_ind][col_x_ind][chan_x_ind] += wtimesdeltas[row_o_ind, col_o_ind, kernel_ind, kernel_row_ind * self.kernelSize * self.inputDim[2] + kernel_col_ind * self.inputDim[2] + chan_x_ind]
+
+        return np.asarray(wtimesdeltaSum)
 
         
 #An entire neural network        
 class NeuralNetwork:
     #initialize with the input size, loss function, and learning rate
     def __init__(self, inputSize, loss, lr):
-        self.inputSize = (inputSize,)
+        self.inputSize = inputSize
         self.loss = loss
         self.lr = lr
 
@@ -177,7 +212,7 @@ class NeuralNetwork:
     def lossderiv(self,yp,y):
         if self.loss == 0:
             # Derivative of sum of square errors loss function
-            return -(y-yp)
+            return -2 * (y-yp)
         else:
             # Derivative of binary cross entropy loss function
             return -((y/yp) - ((1-y)/(1-yp)))
@@ -244,6 +279,21 @@ if __name__=="__main__":
 
     if (len(sys.argv)<2):
         print('a good place to test different parts of your code')
+
+        img = np.full((16,16,4), 0.1)
+        output = np.full((10,10,2), 0.9)
+
+        nn = NeuralNetwork((16, 16, 4), 0, 0.5)
+        # nn.addLayer("Convolutional", (3, 5, 1), np.full(303, 0.2))
+        # nn.addLayer("Convolutional", (2, 3, 1), np.full(56, 0.3))
+        nn.addLayer("Convolutional", (3, 5, 1), np.linspace(0, 0.302, 303))
+        nn.addLayer("Convolutional", (2, 3, 1), np.linspace(0, 0.55, 56))
+        print(np.linspace(0, 0.302, 303))
+        # print(nn.calculate(img))
+        # nn.train(img, output)
+        # print(nn.calculate(img))
+        # print(nn.layers[0].weights)
+
 
 
     elif (sys.argv[1]=='example1'):
