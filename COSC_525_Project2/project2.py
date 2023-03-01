@@ -112,9 +112,6 @@ class ConvolutionalLayer:
         self.lr = lr
         self.weights = weights
 
-        # Find number of weights per kernel (not including bias)
-        self.numWeightsPerKernel = (kernelSize ** 2) * inputDim[2]
-
         # Weights has 4 dimensions (w,h,input_channels,kernels)
         # Biases has 1 dimension (kernels)
 
@@ -128,10 +125,10 @@ class ConvolutionalLayer:
             self.biases = weights[-numOfKernels:]
 
         # Create neuron objects in numpy array of all neurons in layer.
-        # Arrange neurons in a 3D matrix  (w,h,channels).
+        # Arrange neurons in a 3D matrix  (w, h, channels or numOfKernels).
         self.neurons = np.array([[[Neuron(activation, self.weights.size, lr, np.concatenate((self.weights[:,:,:,kernel_ind].ravel(), self.biases[kernel_ind:(kernel_ind+1)]))) for kernel_ind in range(numOfKernels)] for _ in range(inputDim[1] - kernelSize + 1)] for _ in range(inputDim[0] - kernelSize + 1)])
 
-    #calculate the output of all the neurons in the layer and return them as a 3D matrix keyed on row, col, and channel
+    #calculate the output of all the neurons in the layer and return them as a 3D matrix keyed on width index, height index, and channel index
     def calculate(self, input):
         return np.array([[[self.neurons[width_ind, height_ind, channel_ind].calculate(input[width_ind : width_ind + self.kernelSize, height_ind : height_ind + self.kernelSize, : ].flatten()) for channel_ind in range(self.neurons.shape[2])] for height_ind in range(self.neurons.shape[1])] for width_ind in range(self.neurons.shape[0])])
 
@@ -172,12 +169,13 @@ class ConvolutionalLayer:
                     # And with respect to each bias
                     del_E_del_ws_biases[kernel_ind] += self.neurons[width_o_ind, height_o_ind, kernel_ind].delta
 
-        # Do the shared weights updates for each kernel
+        # Do the shared weights updates for each kernel and keep each neuron's weights updated accordingly
         self.weights -= self.lr * del_E_del_ws
         self.biases -= self.lr * np.asarray(del_E_del_ws_biases)
         for neuron_ind, neuron in np.ndenumerate(self.neurons):
             neuron.weights = np.concatenate((self.weights[:,:,:,neuron_ind[2]].ravel(), self.biases[neuron_ind[2]:(neuron_ind[2]+1)]))
 
+        # Return the correctly summed w*deltas
         return np.asarray(wtimesdeltaSum)
 
         
