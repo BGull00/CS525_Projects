@@ -178,6 +178,50 @@ class ConvolutionalLayer:
         # Return the correctly summed w*deltas
         return np.asarray(wtimesdeltaSum)
 
+
+#A max pooling layer
+class MaxPoolingLayer:
+    def __init__(self, kernelSize, inputDim):
+        self.inputDim = inputDim
+        self.kernelSize = kernelSize
+        self.outputDim = (int(inputDim[0] / kernelSize), int(inputDim[1] / kernelSize), inputDim[2])
+
+    #calcualte the max input value for each placement of the kernel on the input
+    def calculate(self, input):
+
+        # Init output as a mutable list (later convert it back to numpy array)
+        output = np.zeros(self.outputDim).tolist()
+
+        # Save input locations of maxes in 3D array that is the size of the output (but first build as a mutable list)
+        self.max_locations = np.zeros(self.outputDim).tolist()
+
+        # Find maxes in each kernel location and each channel for output and save their locations from the input
+        for width_o_ind in range(self.outputDim[0]):
+            for height_o_ind in range(self.outputDim[1]):
+                for channel_ind in range(self.inputDim[2]):
+                    cur_kernel_window = input[width_o_ind * self.kernelSize : width_o_ind * self.kernelSize + self.kernelSize, height_o_ind * self.kernelSize : height_o_ind * self.kernelSize + self.kernelSize, channel_ind]
+                    inds_max_window = np.unravel_index(cur_kernel_window.argmax(), cur_kernel_window.shape)
+                    max_location = (inds_max_window[0] + width_o_ind * self.kernelSize, inds_max_window[1] + height_o_ind * self.kernelSize, channel_ind)
+                    self.max_locations[width_o_ind][height_o_ind][channel_ind] = max_location
+                    output[width_o_ind][height_o_ind][channel_ind] = input[max_location]
+        
+        # print(input)
+        # print(self.max_locations)
+
+        # Make maxes and their locations in the input numpy arrays and return the maxes
+        self.max_locations = np.asarray(self.max_locations)
+        return np.asarray(output)
+
+    #given the next layer's w*delta, return the w*deltas for the max inputs locations and 0s for the rest of the inputs locations   
+    def calcwdeltas(self, wtimesdelta):
+        wtimesdeltaNew = np.zeros(self.inputDim).tolist()
+
+        # Only backpropagate w*deltas corresponding to max input locations
+        for output_ind, wdelta in np.ndenumerate(wtimesdelta):
+            wtimesdeltaNew[self.max_locations[output_ind][0]][self.max_locations[output_ind][1]][self.max_locations[output_ind][2]] = wdelta
+
+        return np.asarray(wtimesdeltaNew)
+
         
 #An entire neural network        
 class NeuralNetwork:
@@ -262,8 +306,8 @@ class NeuralNetwork:
             if layer_params == None or len(layer_params) != 1:
                 raise Exception("addLayer: MaxPooling layer expects one argument: kernel size")
 
-            #layer = MaxPoolingLayer(layer_params[0], self.inputSize)
-            #self.inputSize = 
+            layer = MaxPoolingLayer(layer_params[0], self.inputSize)
+            self.inputSize = layer.outputDim
 
         # Make Flatten layer
         elif layer_type == valid_layer_types[3]:
@@ -284,13 +328,15 @@ if __name__=="__main__":
         print('a good place to test different parts of your code')
 
         img = np.reshape(np.linspace(0, 0.2, 1024), (16,16,4))
-        output = np.reshape(np.linspace(0, 0.2, 384), (8,8,6))
+        output = np.reshape(np.linspace(0, 0.2, 96), (4,4,6))
+        # output = np.reshape(np.linspace(0, 0.2, 384), (8,8,6))
 
         nn = NeuralNetwork((16, 16, 4), 0, 100)
 
         nn.addLayer("Convolutional", (3, 5, 1), np.linspace(-0.1, 0.202, 303))
         nn.addLayer("Convolutional", (2, 3, 1), np.linspace(-0.2, 0.35, 56))
         nn.addLayer("Convolutional", (6, 3, 1), np.linspace(-0.4, 0.73, 114))
+        nn.addLayer("MaxPooling", (2,))
 
         nn.train(img, output)
 

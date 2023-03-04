@@ -12,6 +12,7 @@ model=Sequential()
 model.add(layers.Conv2D(3, 5, input_shape=(16,16,4), activation='sigmoid'))
 model.add(layers.Conv2D(2, 3, activation='sigmoid'))
 model.add(layers.Conv2D(6, 3, activation='sigmoid'))
+model.add(layers.MaxPooling2D(pool_size=(2, 2)))
 
 #Set weights to desired values
 
@@ -28,12 +29,13 @@ model.layers[2].set_weights([weights_2, np.array([0.68, 0.69, 0.70, 0.71, 0.72, 
 #Setting input. Tensor flow is expecting a 4d array since the first dimension is the batch size (here we set it to one), and third dimension is channels
 img=np.reshape(np.linspace(0, 0.2, 1024), (1,16,16,4))
 
-output=np.reshape(np.linspace(0, 0.2, 384), (1,8,8,6))
+output=np.reshape(np.linspace(0, 0.2, 96), (1,4,4,6))
+# output=np.reshape(np.linspace(0, 0.2, 384), (1,8,8,6))
 
 #print needed values.
 np.set_printoptions(precision=5)
 # print('model output before:')
-print(model.predict(img))
+# print(model.predict(img))
 sgd = optimizers.SGD(learning_rate=100)
 model.compile(loss='MSE', optimizer=sgd, metrics=['accuracy'])
 history=model.train_on_batch(img,output)
