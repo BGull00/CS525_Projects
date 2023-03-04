@@ -67,7 +67,7 @@ class FullyConnected:
     def __init__(self,numOfNeurons, activation, input_num, lr, weights=None):
         self.numOfNeurons = numOfNeurons
         self.activation = activation
-        self.input_num = input_num
+        self.input_num = input_num[0]
         self.lr = lr
         self.weights = weights
 
@@ -75,12 +75,12 @@ class FullyConnected:
 
         # Init weights randomly if necessary
         if weights is None:
-            self.weights = np.random.rand(numOfNeurons, input_num + 1)
+            self.weights = np.random.rand(numOfNeurons, self.input_num + 1)
             bias = np.random.rand(1)
             self.weights[:,-1] = bias[0]
 
         # Create neuron objects in numpy array of all neurons in layer
-        self.neurons = np.array([Neuron(activation, input_num, lr, self.weights[neuronInd]) for neuronInd in range(numOfNeurons)])
+        self.neurons = np.array([Neuron(activation, self.input_num, lr, self.weights[neuronInd]) for neuronInd in range(numOfNeurons)])
         
     #calcualte the output of all the neurons in the layer and return a vector with those values 
     #(go through the neurons and call the calcualte() method)      
@@ -319,7 +319,7 @@ class NeuralNetwork:
             size = 1
             for s in self.inputSize:
                 size *= s
-            self.inputSize = (size)
+            self.inputSize = (size,)
 
         # Add layer to NeuralNetwork's list of layers
         self.layers.append(layer)
@@ -370,7 +370,7 @@ if __name__=="__main__":
 
     elif (sys.argv[1]=='example1'):
         nn_ex1 = NeuralNetwork((5, 5, 1), 0, 1)
-        nn_ex1.addLayer("Convolutional", (3, 3, 1))
+        nn_ex1.addLayer("Convolutional", (1, 3, 1))
         nn_ex1.addLayer("Flatten")
         nn_ex1.addLayer("FullyConnected", (1, 1))
 
