@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+from parameters import generateExample2
 """
 For this entire file there are a few constants:
 activation:
@@ -290,7 +291,7 @@ class NeuralNetwork:
             if layer_params == None or len(layer_params) != 2:
                 raise Exception("addLayer: FullyConnected layer expects two arguments: number of neurons and activation")
 
-            layer = FullyConnected(layer_params[0], layer_params[1], self.inputSize[0], self.lr, weights)
+            layer = FullyConnected(layer_params[0], layer_params[1], self.inputSize, self.lr, weights)
             self.inputSize = (layer.numOfNeurons,)
         
         # Make Convolutional layer
@@ -314,16 +315,27 @@ class NeuralNetwork:
             if layer_params != None:
                 raise Exception("addLayer: Flatten layer expects no arguments")
 
-            #layer = FlattenLayer(self.inputSize)
-            #self.inputSize = 
+            layer = FlattenLayer(self.inputSize)
+            size = 1
+            for s in self.inputSize:
+                size *= s
+            self.inputSize = (size)
 
         # Add layer to NeuralNetwork's list of layers
         self.layers.append(layer)
 
+class FlattenLayer:
+    def __init__(self, input_size):
+        self.input_size = input_size
+    
+    def calculate(self, input):
+        return input.flatten()
 
+    def calcwdeltas(self, wdeltas):
+        #Removed the bias from wdeltas
+        return np.reshape(wdeltas, self.input_size)
 
 if __name__=="__main__":
-
     if (len(sys.argv)<2):
         print('a good place to test different parts of your code')
 
@@ -357,11 +369,40 @@ if __name__=="__main__":
 
 
     elif (sys.argv[1]=='example1'):
-        print('run example1')
+        nn_ex1 = NeuralNetwork((5, 5, 1), 0, 1)
+        nn_ex1.addLayer("Convolutional", (3, 3, 1))
+        nn_ex1.addLayer("Flatten")
+        nn_ex1.addLayer("FullyConnected", (1, 1))
+
+        img = np.reshape(np.linspace(0, 0.2, 25), (5,5,1))
+        output = np.reshape(np.linspace(0, 0.2, 1), (1))
+        nn_ex1.train(img, output)
+        print(nn_ex1.calculate(img))
         
 
     elif(sys.argv[1]=='example2'):
-        print('run example2')
+        l1k1,l1k2,l1b1,l1b2,l2k1,l2b,l3,l3b,input, output = generateExample2()
+
+        l1k1=l1k1.reshape(3,3,1,1)
+        l1k2=l1k2.reshape(3,3,1,1)
+        w1 = np.concatenate((l1k1,l1k2),axis=3)
+        w1 = np.concatenate((w1.flatten(), np.array([l1b1[0],l1b2[0]])))
+
+        w2=l2k1.reshape(3,3,2,1)
+        w2 = np.concatenate((w2.flatten(), np.array([l2b[0]])))
+
+        w3 = np.append(l3, l3b)
+
+        nn_ex2 = NeuralNetwork((7, 7, 1), 0, 100)
+        nn_ex2.addLayer("Convolutional", (2, 3, 1), w1)
+        nn_ex2.addLayer("Convolutional", (1, 3, 1), w2)
+        nn_ex2.addLayer("Flatten")
+        nn_ex2.addLayer("FullyConnected", (1, 1), w3)
+
+        img=np.reshape(input,(7,7,1))
+
+        nn_ex2.train(img, output)
+        print(nn_ex2.calculate(img))
         
 
     elif(sys.argv[1]=='example3'):
