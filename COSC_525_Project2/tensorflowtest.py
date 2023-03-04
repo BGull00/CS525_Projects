@@ -14,23 +14,25 @@ model.add(layers.Conv2D(2, 3, activation='sigmoid'))
 model.add(layers.Conv2D(6, 3, activation='sigmoid'))
 model.add(layers.MaxPooling2D(pool_size=(2, 2)))
 
+#Setting input and output. Tensor flow is expecting a 4d array since the first dimension is the batch size (here we set it to one), and third dimension is channels
+np.random.seed(59)
+img=np.reshape(np.random.rand(1024), (1,16,16,4))
+output=np.reshape(np.random.rand(96), (1,4,4,6))
+
 #Set weights to desired values
 
 # model.layers[0].set_weights([np.full((5, 5, 4, 3), 0.2), np.full(3, 0.2)]) #Shape of weight matrix is (w,h,input_channels,kernels)
 # model.layers[1].set_weights([np.full((3, 3, 3, 2), 0.3), np.full(2, 0.3)]) #Shape of weight matrix is (w,h,input_channels,kernels)
-weights_0 = np.reshape(np.linspace(-0.1, 0.199, 300), (5, 5, 4, 3))
-weights_1 = np.reshape(np.linspace(-0.2, 0.33, 54), (3, 3, 3, 2))
-weights_2 = np.reshape(np.linspace(-0.4, 0.67, 108), (3, 3, 2, 6))
-model.layers[0].set_weights([weights_0, np.array([0.200, 0.201, 0.202])]) #Shape of weight matrix is (w,h,input_channels,kernels)
-model.layers[1].set_weights([weights_1, np.array([0.34, 0.35])]) #Shape of weight matrix is (w,h,input_channels,kernels)
-model.layers[2].set_weights([weights_2, np.array([0.68, 0.69, 0.70, 0.71, 0.72, 0.73])]) #Shape of weight matrix is (w,h,input_channels,kernels)
+rands_0 = 2 * np.random.rand(303) - 1
+rands_1 = 2 * np.random.rand(56) - 1
+rands_2 = 2 * np.random.rand(114) - 1
+weights_0 = np.reshape(rands_0[:300], (5, 5, 4, 3))
+weights_1 = np.reshape(rands_1[:54], (3, 3, 3, 2))
+weights_2 = np.reshape(rands_2[:108], (3, 3, 2, 6))
+model.layers[0].set_weights([weights_0, rands_0[-3:]]) #Shape of weight matrix is (w,h,input_channels,kernels)
+model.layers[1].set_weights([weights_1, rands_1[-2:]]) #Shape of weight matrix is (w,h,input_channels,kernels)
+model.layers[2].set_weights([weights_2, rands_2[-6:]]) #Shape of weight matrix is (w,h,input_channels,kernels)
 # print(model.summary())
-
-#Setting input. Tensor flow is expecting a 4d array since the first dimension is the batch size (here we set it to one), and third dimension is channels
-img=np.reshape(np.linspace(0, 0.2, 1024), (1,16,16,4))
-
-output=np.reshape(np.linspace(0, 0.2, 96), (1,4,4,6))
-# output=np.reshape(np.linspace(0, 0.2, 384), (1,8,8,6))
 
 #print needed values.
 np.set_printoptions(precision=5)
@@ -42,7 +44,7 @@ history=model.train_on_batch(img,output)
 print('model output after:')
 print(model.predict(img))
 
-# print('1st convolutional layer, 1st kernel weights:')
-# print(model.layers[0].get_weights()[0])
-# print('1st convolutional layer, 1st kernel bias:')
-# print(model.layers[0].get_weights()[1])
+print('1st convolutional layer, 1st kernel weights:')
+print(model.layers[0].get_weights()[0])
+print('1st convolutional layer, 1st kernel bias:')
+print(model.layers[0].get_weights()[1])

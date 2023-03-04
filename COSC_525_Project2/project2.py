@@ -327,23 +327,28 @@ if __name__=="__main__":
     if (len(sys.argv)<2):
         print('a good place to test different parts of your code')
 
-        img = np.reshape(np.linspace(0, 0.2, 1024), (16,16,4))
-        output = np.reshape(np.linspace(0, 0.2, 96), (4,4,6))
-        # output = np.reshape(np.linspace(0, 0.2, 384), (8,8,6))
+
+        np.random.seed(59)
+        img = np.reshape(np.random.rand(1024), (16,16,4))
+        output = np.reshape(np.random.rand(96), (4,4,6))
 
         nn = NeuralNetwork((16, 16, 4), 0, 100)
 
-        nn.addLayer("Convolutional", (3, 5, 1), np.linspace(-0.1, 0.202, 303))
-        nn.addLayer("Convolutional", (2, 3, 1), np.linspace(-0.2, 0.35, 56))
-        nn.addLayer("Convolutional", (6, 3, 1), np.linspace(-0.4, 0.73, 114))
+        rands_0 = 2 * np.random.rand(303) - 1
+        rands_1 = 2 * np.random.rand(56) - 1
+        rands_2 = 2 * np.random.rand(114) - 1
+
+        nn.addLayer("Convolutional", (3, 5, 1), rands_0)
+        nn.addLayer("Convolutional", (2, 3, 1), rands_1)
+        nn.addLayer("Convolutional", (6, 3, 1), rands_2)
         nn.addLayer("MaxPooling", (2,))
 
         nn.train(img, output)
 
         print(nn.calculate(img))
 
-        # print(nn.layers[0].weights)
-        # print(nn.layers[0].biases)
+        print(nn.layers[0].weights)
+        print(nn.layers[0].biases)
 
 
         # nn = NeuralNetwork((8,), 0, 100)
