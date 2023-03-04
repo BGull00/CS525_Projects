@@ -1,6 +1,6 @@
 import numpy as np
 import sys
-from parameters import generateExample2
+from parameters import generateExample2, generateExample1
 """
 For this entire file there are a few constants:
 activation:
@@ -369,13 +369,20 @@ if __name__=="__main__":
 
 
     elif (sys.argv[1]=='example1'):
-        nn_ex1 = NeuralNetwork((5, 5, 1), 0, 1)
-        nn_ex1.addLayer("Convolutional", (1, 3, 1))
-        nn_ex1.addLayer("Flatten")
-        nn_ex1.addLayer("FullyConnected", (1, 1))
+        l1, l1b, l2, l2b, input, output = generateExample1()
 
-        img = np.reshape(np.linspace(0, 0.2, 25), (5,5,1))
-        output = np.reshape(np.linspace(0, 0.2, 1), (1))
+        w1 = l1.reshape(3,3,1)
+        w1 = np.concatenate((w1.flatten(), np.array([l1b[0]])))
+
+        w2 =  np.append(l2, l2b)
+
+        nn_ex1 = NeuralNetwork((5, 5, 1), 0, 1)
+        nn_ex1.addLayer("Convolutional", (1, 3, 1), w1)
+        nn_ex1.addLayer("Flatten")
+        nn_ex1.addLayer("FullyConnected", (1, 1), w2)
+
+        img = np.reshape(input, (5,5,1))
+
         nn_ex1.train(img, output)
         print(nn_ex1.calculate(img))
         
