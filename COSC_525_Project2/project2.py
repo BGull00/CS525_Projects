@@ -1,6 +1,6 @@
 import numpy as np
 import sys
-from parameters import generateExample2, generateExample1
+from parameters import generateExample2, generateExample1, generateExample3
 """
 For this entire file there are a few constants:
 activation:
@@ -323,6 +323,17 @@ class NeuralNetwork:
 
         # Add layer to NeuralNetwork's list of layers
         self.layers.append(layer)
+    
+    def printWeights(self):
+        np.set_printoptions(precision=5)
+        for layer in self.layers:
+            if not isinstance(layer, FlattenLayer):
+                print('New Layer: ')
+                print(layer.weights)
+                if isinstance(layer, ConvolutionalLayer):
+                    print('Bias:')
+                    for bias in layer.biases:
+                        print
 
 class FlattenLayer:
     def __init__(self, input_size):
@@ -333,7 +344,7 @@ class FlattenLayer:
 
     def calcwdeltas(self, wdeltas):
         #Removed the bias from wdeltas
-        return np.reshape(wdeltas, self.input_size)
+        return np.reshape(wdeltas[:-1], self.input_size)
 
 if __name__=="__main__":
     if (len(sys.argv)<2):
@@ -355,6 +366,7 @@ if __name__=="__main__":
         nn.addLayer("Convolutional", (6, 3, 1), rands_2)
         nn.addLayer("MaxPooling", (2,))
 
+
         nn.train(img, output)
 
         print(nn.calculate(img))
@@ -375,14 +387,18 @@ if __name__=="__main__":
         w1 = np.concatenate((w1.flatten(), np.array([l1b[0]])))
 
         w2 =  np.append(l2, l2b)
+        w2 = np.reshape(w2, (1, len(w2)))
 
-        nn_ex1 = NeuralNetwork((5, 5, 1), 0, 1)
+        nn_ex1 = NeuralNetwork((5, 5, 1), 0, 100)
         nn_ex1.addLayer("Convolutional", (1, 3, 1), w1)
         nn_ex1.addLayer("Flatten")
         nn_ex1.addLayer("FullyConnected", (1, 1), w2)
 
         img = np.reshape(input, (5,5,1))
 
+        nn_ex1.printWeights()
+
+        print(nn_ex1.calculate(img))
         nn_ex1.train(img, output)
         print(nn_ex1.calculate(img))
         
@@ -399,6 +415,7 @@ if __name__=="__main__":
         w2 = np.concatenate((w2.flatten(), np.array([l2b[0]])))
 
         w3 = np.append(l3, l3b)
+        w3 = np.reshape(w3, (1, 10))
 
         nn_ex2 = NeuralNetwork((7, 7, 1), 0, 100)
         nn_ex2.addLayer("Convolutional", (2, 3, 1), w1)
@@ -408,9 +425,30 @@ if __name__=="__main__":
 
         img=np.reshape(input,(7,7,1))
 
+        print(nn_ex2.calculate(img))
         nn_ex2.train(img, output)
         print(nn_ex2.calculate(img))
         
 
     elif(sys.argv[1]=='example3'):
-        print('run example3')
+        l1k1,l1k2,l1b1,l1b2,l2,l2b,input,output = generateExample3()
+
+        l1k1=l1k1.reshape(3,3,1,1)
+        l1k2=l1k2.reshape(3,3,1,1)
+        w1 = np.concatenate((l1k1,l1k2),axis=3)
+        w1 = np.concatenate((w1.flatten(), np.array([l1b1[0],l1b2[0]])))
+
+        w2 =  np.append(l2, l2b)
+        w2 = np.reshape(w2, (1, len(w2)))
+
+        nn_ex3 = NeuralNetwork((8,8,1), 0, 100)
+        nn_ex3.addLayer("Convolutional", (2, 3, 1), w1)
+        nn_ex3.addLayer("MaxPooling", (2,))
+        nn_ex3.addLayer("Flatten")
+        nn_ex3.addLayer("FullyConnected", (1, 1), w2)
+
+        img=np.reshape(input,(8,8,1))
+
+        print(nn_ex3.calculate(img))
+        nn_ex3.train(img, output)
+        print(nn_ex3.calculate(img))
