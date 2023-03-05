@@ -43,14 +43,14 @@ history=model.train_on_batch(img,output)
 print('model output after:')
 print(model.predict(img))
 
-print('1st convolutional layer, 1st kernel weights:')
+print('Convolutional layer, 1st kernel weights:')
 print(np.squeeze(model.get_weights()[0][:,:,0,0]))
-print('1st convolutional layer, 1st kernel bias:')
+print('Convolutional layer, 1st kernel bias:')
 print(np.squeeze(model.get_weights()[1][0]))
 
-print('1st convolutional layer, 2nd kernel weights:')
+print('Convolutional layer, 2nd kernel weights:')
 print(np.squeeze(model.get_weights()[0][:,:,0,1]))
-print('1st convolutional layer, 2nd kernel bias:')
+print('Convolutional layer, 2nd kernel bias:')
 print(np.squeeze(model.get_weights()[1][1]))
 
 print('fully connected layer weights:')

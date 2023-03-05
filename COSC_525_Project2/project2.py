@@ -323,17 +323,6 @@ class NeuralNetwork:
 
         # Add layer to NeuralNetwork's list of layers
         self.layers.append(layer)
-    
-    def printWeights(self):
-        np.set_printoptions(precision=5)
-        for layer in self.layers:
-            if not isinstance(layer, FlattenLayer):
-                print('New Layer: ')
-                print(layer.weights)
-                if isinstance(layer, ConvolutionalLayer):
-                    print('Bias:')
-                    for bias in layer.biases:
-                        print
 
 class FlattenLayer:
     def __init__(self, input_size):
@@ -347,6 +336,7 @@ class FlattenLayer:
         return np.reshape(wdeltas[:-1], self.input_size)
 
 if __name__=="__main__":
+    np.set_printoptions(precision=5)
     if (len(sys.argv)<2):
         print('a good place to test different parts of your code')
 
@@ -396,11 +386,35 @@ if __name__=="__main__":
 
         img = np.reshape(input, (5,5,1))
 
-        nn_ex1.printWeights()
+        print("model output before:")
+        print(nn_ex1.calculate(img))
 
-        print(nn_ex1.calculate(img))
         nn_ex1.train(img, output)
+
+        print("model output after:")
         print(nn_ex1.calculate(img))
+
+        #Print Weights
+        #Convolution
+        print("Convolutional layer weights:")
+        print('[[{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]]'.format( \
+              nn_ex1.layers[0].weights[0][0][0][0], nn_ex1.layers[0].weights[0][1][0][0], nn_ex1.layers[0].weights[0][2][0][0], \
+              nn_ex1.layers[0].weights[1][0][0][0], nn_ex1.layers[0].weights[1][1][0][0], nn_ex1.layers[0].weights[1][2][0][0], \
+              nn_ex1.layers[0].weights[2][0][0][0], nn_ex1.layers[0].weights[2][1][0][0], nn_ex1.layers[0].weights[2][2][0][0]))
+        
+        print("Convolutional layer bias:")
+        print('{:.8f}'.format(nn_ex1.layers[0].biases[0]))
+        
+
+        #Fully Connected
+        print("fully connected layer weights:" )
+        print("[{:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f}]".format( \
+              nn_ex1.layers[2].weights[0][0], nn_ex1.layers[2].weights[0][1], nn_ex1.layers[2].weights[0][2], \
+              nn_ex1.layers[2].weights[0][3], nn_ex1.layers[2].weights[0][4], nn_ex1.layers[2].weights[0][5], \
+              nn_ex1.layers[2].weights[0][6], nn_ex1.layers[2].weights[0][7], nn_ex1.layers[2].weights[0][8], ))
+        
+        print("fully connected layer bias:" )
+        print("{:.8f}".format(nn_ex1.layers[2].weights[0][9]))
         
 
     elif(sys.argv[1]=='example2'):
@@ -425,10 +439,58 @@ if __name__=="__main__":
 
         img=np.reshape(input,(7,7,1))
 
+        print("model output before:")
         print(nn_ex2.calculate(img))
+
         nn_ex2.train(img, output)
+
+        print("model output after:")
         print(nn_ex2.calculate(img))
+
+        #Print Weights
+        #1st Convolution
+        print("1st convolutional layer, 1st kernel weights:")
+        print('[[{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]]'.format( \
+              nn_ex2.layers[0].weights[0][0][0][0], nn_ex2.layers[0].weights[0][1][0][0], nn_ex2.layers[0].weights[0][2][0][0], \
+              nn_ex2.layers[0].weights[1][0][0][0], nn_ex2.layers[0].weights[1][1][0][0], nn_ex2.layers[0].weights[1][2][0][0], \
+              nn_ex2.layers[0].weights[2][0][0][0], nn_ex2.layers[0].weights[2][1][0][0], nn_ex2.layers[0].weights[2][2][0][0]))
         
+        print("1st convolutional layer, 1st kernel bias:")
+        print('{:.8f}'.format(nn_ex2.layers[0].biases[0]))
+        
+        print("1st convolutional layer, 2st kernel weights:")
+        print('[[{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]]'.format( \
+              nn_ex2.layers[0].weights[0][0][0][1], nn_ex2.layers[0].weights[0][1][0][1], nn_ex2.layers[0].weights[0][2][0][1], \
+              nn_ex2.layers[0].weights[1][0][0][1], nn_ex2.layers[0].weights[1][1][0][1], nn_ex2.layers[0].weights[1][2][0][1], \
+              nn_ex2.layers[0].weights[2][0][0][1], nn_ex2.layers[0].weights[2][1][0][1], nn_ex2.layers[0].weights[2][2][0][1]))
+
+        print("1st convolutional layer, 2nd kernel bias:")
+        print('{:.8f}'.format(nn_ex2.layers[0].biases[1]))
+
+        #Second Convolution
+        print("2nd convolutional layer weights:")
+        print('[[{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]]'.format( \
+              nn_ex2.layers[1].weights[0][0][0][0], nn_ex2.layers[1].weights[0][1][0][0], nn_ex2.layers[1].weights[0][2][0][0], \
+              nn_ex2.layers[1].weights[1][0][0][0], nn_ex2.layers[1].weights[1][1][0][0], nn_ex2.layers[1].weights[1][2][0][0], \
+              nn_ex2.layers[1].weights[2][0][0][0], nn_ex2.layers[1].weights[2][1][0][0], nn_ex2.layers[1].weights[2][2][0][0]))
+
+        print('[[{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]]'.format( \
+              nn_ex2.layers[1].weights[0][0][1][0], nn_ex2.layers[1].weights[0][1][1][0], nn_ex2.layers[1].weights[0][2][1][0], \
+              nn_ex2.layers[1].weights[1][0][1][0], nn_ex2.layers[1].weights[1][1][1][0], nn_ex2.layers[1].weights[1][2][1][0], \
+              nn_ex2.layers[1].weights[2][0][1][0], nn_ex2.layers[1].weights[2][1][1][0], nn_ex2.layers[1].weights[2][2][1][0]))
+
+        print("2nd convolutional layer bias:")
+        print('{:.9f}'.format(nn_ex2.layers[1].biases[0]))
+
+        #Fully Connected
+        print("fully connected layer weights:" )
+        print("[{:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f}]".format( \
+              nn_ex2.layers[3].weights[0][0], nn_ex2.layers[3].weights[0][1], nn_ex2.layers[3].weights[0][2], \
+              nn_ex2.layers[3].weights[0][3], nn_ex2.layers[3].weights[0][4], nn_ex2.layers[3].weights[0][5], \
+              nn_ex2.layers[3].weights[0][6], nn_ex2.layers[3].weights[0][7], nn_ex2.layers[3].weights[0][8], ))
+        
+        print("fully connected layer bias:" )
+        print("{:.8f}".format(nn_ex2.layers[3].weights[0][9]))
 
     elif(sys.argv[1]=='example3'):
         l1k1,l1k2,l1b1,l1b2,l2,l2b,input,output = generateExample3()
@@ -449,6 +511,43 @@ if __name__=="__main__":
 
         img=np.reshape(input,(8,8,1))
 
+        print("model output before:")
         print(nn_ex3.calculate(img))
+
         nn_ex3.train(img, output)
+
+        print("model output after:")
         print(nn_ex3.calculate(img))
+
+        #Print Weights
+        #1st Convolution
+        print("Convolutional layer, 1st kernel weights:")
+        print('[[{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]]'.format( \
+              nn_ex3.layers[0].weights[0][0][0][0], nn_ex3.layers[0].weights[0][1][0][0], nn_ex3.layers[0].weights[0][2][0][0], \
+              nn_ex3.layers[0].weights[1][0][0][0], nn_ex3.layers[0].weights[1][1][0][0], nn_ex3.layers[0].weights[1][2][0][0], \
+              nn_ex3.layers[0].weights[2][0][0][0], nn_ex3.layers[0].weights[2][1][0][0], nn_ex3.layers[0].weights[2][2][0][0]))
+        
+        print("Convolutional layer, 1st kernel bias:")
+        print('{:.8f}'.format(nn_ex3.layers[0].biases[0]))
+        
+        print("Convolutional layer, 2st kernel weights:")
+        print('[[{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]]'.format( \
+              nn_ex3.layers[0].weights[0][0][0][1], nn_ex3.layers[0].weights[0][1][0][1], nn_ex3.layers[0].weights[0][2][0][1], \
+              nn_ex3.layers[0].weights[1][0][0][1], nn_ex3.layers[0].weights[1][1][0][1], nn_ex3.layers[0].weights[1][2][0][1], \
+              nn_ex3.layers[0].weights[2][0][0][1], nn_ex3.layers[0].weights[2][1][0][1], nn_ex3.layers[0].weights[2][2][0][1]))
+
+        print("Convolutional layer, 2nd kernel bias:")
+        print('{:.8f}'.format(nn_ex3.layers[0].biases[1]))
+
+        #Fully Connected
+        print("fully connected layer weights:" )
+        print("[{:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f} {:.5f}]".format( \
+              nn_ex3.layers[3].weights[0][0], nn_ex3.layers[3].weights[0][1], nn_ex3.layers[3].weights[0][2], \
+              nn_ex3.layers[3].weights[0][3], nn_ex3.layers[3].weights[0][4], nn_ex3.layers[3].weights[0][5], \
+              nn_ex3.layers[3].weights[0][6], nn_ex3.layers[3].weights[0][7], nn_ex3.layers[3].weights[0][8], \
+              nn_ex3.layers[3].weights[0][9], nn_ex3.layers[3].weights[0][10], nn_ex3.layers[3].weights[0][11], \
+              nn_ex3.layers[3].weights[0][12], nn_ex3.layers[3].weights[0][13], nn_ex3.layers[3].weights[0][14], \
+              nn_ex3.layers[3].weights[0][15], nn_ex3.layers[3].weights[0][16], nn_ex3.layers[3].weights[0][17], ))
+        
+        print("fully connected layer bias:" )
+        print("{:.8f}".format(nn_ex3.layers[3].weights[0][18]))
