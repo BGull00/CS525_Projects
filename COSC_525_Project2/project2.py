@@ -458,7 +458,7 @@ if __name__=="__main__":
         print("1st convolutional layer, 1st kernel bias:")
         print('{:.8f}'.format(nn_ex2.layers[0].biases[0]))
         
-        print("1st convolutional layer, 2st kernel weights:")
+        print("1st convolutional layer, 2nd kernel weights:")
         print('[[{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]]'.format( \
               nn_ex2.layers[0].weights[0][0][0][1], nn_ex2.layers[0].weights[0][1][0][1], nn_ex2.layers[0].weights[0][2][0][1], \
               nn_ex2.layers[0].weights[1][0][0][1], nn_ex2.layers[0].weights[1][1][0][1], nn_ex2.layers[0].weights[1][2][0][1], \
@@ -530,7 +530,7 @@ if __name__=="__main__":
         print("Convolutional layer, 1st kernel bias:")
         print('{:.8f}'.format(nn_ex3.layers[0].biases[0]))
         
-        print("Convolutional layer, 2st kernel weights:")
+        print("Convolutional layer, 2nd kernel weights:")
         print('[[{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]\n [{:<7.5f} {:<7.5f} {:<7.5f}]]'.format( \
               nn_ex3.layers[0].weights[0][0][0][1], nn_ex3.layers[0].weights[0][1][0][1], nn_ex3.layers[0].weights[0][2][0][1], \
               nn_ex3.layers[0].weights[1][0][0][1], nn_ex3.layers[0].weights[1][1][0][1], nn_ex3.layers[0].weights[1][2][0][1], \
