@@ -50,3 +50,6 @@ coverage.xml
 
 # Sphinx documentation
 docs/_build/
+
+#Large Image File
+COSC_525_Project3/project3_COSC525/
