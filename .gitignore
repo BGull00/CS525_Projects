@@ -53,3 +53,9 @@ docs/_build/
 
 #Large Image File
 COSC_525_Project3/project3_COSC525/
+
+# TensorBoard Logs
+COSC_525_Project3/logs/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
