@@ -57,5 +57,8 @@ COSC_525_Project3/project3_COSC525/
 # TensorBoard Logs
 COSC_525_Project3/logs/
 
+#Trained ResNet Model
+COSC_525_FinalProject/trainedModel/
+
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints
