@@ -60,5 +60,8 @@ COSC_525_Project3/logs/
 #Trained ResNet Model
 COSC_525_FinalProject/trainedModel/
 
+#Python Virtual Environment
+.venv
+
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints
