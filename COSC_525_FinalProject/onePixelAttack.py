@@ -37,7 +37,8 @@ def loadAttackData(filename):
         X_attacked = pickle.load(fin)
         X_true = pickle.load(fin)
         y = pickle.load(fin)
-    return np.array(X_attacked), np.array(X_true), y
+    return X_attacked, X_true, y
+    #return np.array(X_attacked), np.array(X_true), y
     
 
 if __name__ == '__main__':
