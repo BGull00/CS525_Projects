@@ -42,6 +42,31 @@ def createFullyConvDenoisingAutoencoder(input_shape, should_log = False):
     return model
 
 
+''' Create denoising autoencoder model that uses fully connected layers '''
+def createFullyConnDenoisingAutoencoder(input_shape, should_log = False):
+
+    model = Sequential()
+
+    input_size = 1
+    for val in input_shape:
+        input_size *= val
+
+    model.add(layers.Input(shape=input_shape))
+    model.add(layers.Flatten())
+    model.add(layers.Dense(units = 128, activation = 'relu'))
+    model.add(layers.BatchNormalization())
+    model.add(layers.Dense(units = input_size, activation = 'sigmoid'))
+    model.add(layers.Reshape(input_shape))
+
+    lr_schedule = keras.optimizers.schedules.ExponentialDecay(initial_learning_rate = 0.001, decay_steps = 1000, decay_rate = 0.5)
+    model.compile(optimizer=keras.optimizers.Adam(learning_rate=lr_schedule), metrics=['accuracy'], loss='mean_squared_error')
+
+    if should_log:
+        model.summary()
+
+    return model
+
+
 ''' Function to load CIFAR10 images that have been attacked, the same unattacked images, and the true class labels '''
 def loadAttackData(filename):
     with open(filename, 'rb') as fin:
@@ -201,8 +226,13 @@ if __name__ == '__main__':
     if should_train:
         if(architecture == 'fully_conv'):
             model = createFullyConvDenoisingAutoencoder(X_attacked[0].shape)
+            num_epochs = 1000
+
+        elif(architecture == 'fully_conn'):
+            model = createFullyConnDenoisingAutoencoder(X_attacked[0].shape, should_log=True)
+            num_epochs = 10000
         
-        model.fit(X_attacked_train, X_unattacked_train, epochs = 1000, batch_size = 256, shuffle = True, validation_data = (X_attacked_test, X_unattacked_test))
+        model.fit(X_attacked_train, X_unattacked_train, epochs = num_epochs, batch_size = 256, shuffle = True, validation_data = (X_attacked_test, X_unattacked_test))
         model.save('./trained_' + architecture)
     else:
         if not os.path.exists('./trained_' + architecture):
@@ -211,7 +241,7 @@ if __name__ == '__main__':
         model = models.load_model('./trained_' + architecture)
 
     # Save a grid of test images for each of the following image types: attacked, unattacked, and denoised
-    plot_image_grid(X_attacked_test[:100] * 255, save_grid_filename='attacked_imgs_test_' + architecture + '.png')
-    plot_image_grid(X_unattacked_test[:100] * 255, save_grid_filename='unattacked_imgs_test_' + architecture + '.png')
-    plot_image_grid(model.predict(X_attacked_test)[:100] * 255, save_grid_filename='denoised_attacked_imgs_test_' + architecture + '.png')
-    plot_image_grid(model.predict(X_unattacked_test)[:100] * 255, save_grid_filename='denoised_unattacked_imgs_test_' + architecture + '.png')
+    plot_image_grid(X_attacked_test[:100] * 255, save_grid_filename='attacked_imgs.png')
+    plot_image_grid(X_unattacked_test[:100] * 255, save_grid_filename='unattacked_imgs.png')
+    plot_image_grid(model.predict(X_attacked_test)[:100] * 255, save_grid_filename='denoised_attacked_imgs_' + architecture + '.png')
+    plot_image_grid(model.predict(X_unattacked_test)[:100] * 255, save_grid_filename='denoised_unattacked_imgs_' + architecture + '.png')
