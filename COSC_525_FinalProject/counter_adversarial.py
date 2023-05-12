@@ -3,6 +3,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras import models
 from tensorflow.keras.models import Sequential
+from scipy.ndimage import gaussian_filter
 import numpy as np
 from matplotlib import pyplot as plt
 import pickle
@@ -15,7 +16,7 @@ import math
 REQ_OPTIONS = ('--architecture',)
 OPT_OPTIONS = ('--train',)
 REQUIRES_ARG = ('--architecture',)
-ARCHITECTURES = ('fully_conv', 'fully_conn', 'gan')
+ARCHITECTURES = ('fully_conv', 'fully_conn', 'gan', 'blur')
 
 
 ''' Create denoising autoencoder model that uses convolutions '''
@@ -93,6 +94,7 @@ def create_GAN_denoising_autoencoder(input_shape, should_log = False):
     discriminator.add(layers.Conv2D(filters = 32, kernel_size = 3, strides = 1, padding='same', activation = layers.LeakyReLU()))
     discriminator.add(layers.BatchNormalization()) # H/2, W/2, 32
     discriminator.add(layers.Dropout(0.5))
+    discriminator.add(layers.Flatten())
     discriminator.add(layers.Dense(units = 1, activation = 'sigmoid'))
 
     if should_log:
@@ -102,13 +104,13 @@ def create_GAN_denoising_autoencoder(input_shape, should_log = False):
 
 
 ''' Function used to calculate loss values for generative adversarial denoising autoencoder model '''
-def get_GAN_denoising_autoencoder_losses(unattacked_images, denoised_images, denoised_disc_output, unattacked_disc_output, mse, binary_cross_entropy):
+def get_GAN_denoising_autoencoder_losses(unattacked_images, denoised_images, denoised_disc_output, unattacked_disc_output, mse, binary_cross_entropy, epoch):
 
     # Calculate autoencoder loss (sum of MSE and binary cross entropy from discriminator being fooled
     # into thinking denoised images are unattacked)
     mse_autoencoder_loss = mse(unattacked_images, denoised_images)
     discriminator_output_loss = binary_cross_entropy(tf.ones_like(denoised_disc_output), denoised_disc_output)
-    autoencoder_loss = mse_autoencoder_loss + discriminator_output_loss
+    autoencoder_loss = 25000/(epoch+1) * mse_autoencoder_loss + discriminator_output_loss
 
     # Calculate discriminator loss (sum of binary cross entropy from correctly classifying unattacked
     # images as unattacked and from correctly classifying denoised images as denoised)
@@ -122,7 +124,7 @@ def get_GAN_denoising_autoencoder_losses(unattacked_images, denoised_images, den
 ''' Function used by TensorFlow to train the generative adversarial denoising autoencoder for a single step;
 credit: https://www.tensorflow.org/tutorials/generative/dcgan '''
 @tf.function
-def train_GAN_denoising_autoencoder_step(attacked_images, unattacked_images, autoencoder, discriminator, mse, binary_cross_entropy, autoencoder_optimizer, discriminator_optimizer):
+def train_GAN_denoising_autoencoder_step(attacked_images, unattacked_images, autoencoder, discriminator, mse, binary_cross_entropy, autoencoder_optimizer, discriminator_optimizer, epoch):
 
     # Perform training step
     with tf.GradientTape() as autoencoder_tape, tf.GradientTape() as discriminator_tape:
@@ -131,7 +133,7 @@ def train_GAN_denoising_autoencoder_step(attacked_images, unattacked_images, aut
         denoised_disc_output = discriminator(denoised_images, training=True)
         unattacked_disc_output = discriminator(unattacked_images, training=True)
 
-        autoencoder_loss, discriminator_loss = get_GAN_denoising_autoencoder_losses(unattacked_images, denoised_images, denoised_disc_output, unattacked_disc_output, mse, binary_cross_entropy)
+        autoencoder_loss, discriminator_loss = get_GAN_denoising_autoencoder_losses(unattacked_images, denoised_images, denoised_disc_output, unattacked_disc_output, mse, binary_cross_entropy, epoch)
 
     gradients_of_discriminator = discriminator_tape.gradient(discriminator_loss, discriminator.trainable_variables)
     discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
@@ -169,13 +171,13 @@ def train_GAN_denoising_autoencoder(attacked_images_train, unattacked_images_tra
             unattacked_images_batch = unattacked_images_train[batch_rand_img_inds]
 
             # Perform training step on current batch of attacked and unattacked images
-            train_GAN_denoising_autoencoder_step(attacked_images_batch, unattacked_images_batch, autoencoder, discriminator, mse, binary_cross_entropy, autoencoder_optimizer, discriminator_optimizer)
+            train_GAN_denoising_autoencoder_step(attacked_images_batch, unattacked_images_batch, autoencoder, discriminator, mse, binary_cross_entropy, autoencoder_optimizer, discriminator_optimizer, epoch)
             
         # Calculate and print losses for the epoch for all training data
         denoised_images_train = autoencoder(attacked_images_train, training = False)
         denoised_disc_output_train = discriminator(denoised_images_train, training = False)
         unattacked_disc_output_train = discriminator(unattacked_images_train, training = False)
-        autoencoder_loss_train, discriminator_loss_train = get_GAN_denoising_autoencoder_losses(unattacked_images_train, denoised_images_train, denoised_disc_output_train, unattacked_disc_output_train, mse, binary_cross_entropy)
+        autoencoder_loss_train, discriminator_loss_train = get_GAN_denoising_autoencoder_losses(unattacked_images_train, denoised_images_train, denoised_disc_output_train, unattacked_disc_output_train, mse, binary_cross_entropy, epoch)
 
         print('    autoencoder_loss_train: ' + str(float(autoencoder_loss_train)) + ' - discriminator_loss_train: ' + str(float(discriminator_loss_train)))
 
@@ -183,7 +185,7 @@ def train_GAN_denoising_autoencoder(attacked_images_train, unattacked_images_tra
         denoised_images_val = autoencoder(attacked_images_val, training = False)
         denoised_disc_output_val = discriminator(denoised_images_val, training = False)
         unattacked_disc_output_val = discriminator(unattacked_images_val, training = False)
-        autoencoder_loss_val, discriminator_loss_val = get_GAN_denoising_autoencoder_losses(unattacked_images_val, denoised_images_val, denoised_disc_output_val, unattacked_disc_output_val, mse, binary_cross_entropy)
+        autoencoder_loss_val, discriminator_loss_val = get_GAN_denoising_autoencoder_losses(unattacked_images_val, denoised_images_val, denoised_disc_output_val, unattacked_disc_output_val, mse, binary_cross_entropy, epoch)
 
         print('    autoencoder_loss_val: ' + str(float(autoencoder_loss_val)) + ' - discriminator_loss_val: ' + str(float(discriminator_loss_val)))
 
@@ -345,33 +347,51 @@ if __name__ == '__main__':
         exit()
 
     # Create and train or load in existing model
-    if should_train:
-        if(architecture == 'fully_conv'):
-            model = create_fully_conv_denoising_autoencoder(X_attacked[0].shape)
-            num_epochs = 1000
+    if(architecture != 'blur'):
+        if should_train:
+            if(architecture == 'fully_conv'):
+                model = create_fully_conv_denoising_autoencoder(X_attacked[0].shape)
+                num_epochs = 1000
 
-        elif(architecture == 'fully_conn'):
-            model = create_fully_conn_denoising_autoencoder(X_attacked[0].shape)
-            num_epochs = 10000
+            elif(architecture == 'fully_conn'):
+                model = create_fully_conn_denoising_autoencoder(X_attacked[0].shape)
+                num_epochs = 10000
 
-        elif(architecture == 'gan'):
-            autoencoder, discriminator = create_GAN_denoising_autoencoder(X_attacked[0].shape)
-            num_epochs = 1000
-            train_GAN_denoising_autoencoder(X_attacked_train, X_unattacked_train, X_attacked_test, X_unattacked_test, num_epochs, 256, autoencoder, discriminator)
-            model = autoencoder
-        
-        if(architecture != 'gan'):
-            model.fit(X_attacked_train, X_unattacked_train, epochs = num_epochs, batch_size = 256, shuffle = True, validation_data = (X_attacked_test, X_unattacked_test))
-        
-        model.save('./trained_' + architecture)
+            elif(architecture == 'gan'):
+                autoencoder, discriminator = create_GAN_denoising_autoencoder(X_attacked[0].shape)
+                num_epochs = 1000
+                train_GAN_denoising_autoencoder(X_attacked_train, X_unattacked_train, X_attacked_test, X_unattacked_test, num_epochs, 256, autoencoder, discriminator)
+                model = autoencoder
+            
+            if(architecture != 'gan'):
+                model.fit(X_attacked_train, X_unattacked_train, epochs = num_epochs, batch_size = 256, shuffle = True, validation_data = (X_attacked_test, X_unattacked_test))
+            
+            model.save('./trained_' + architecture)
+        else:
+            if not os.path.exists('./trained_' + architecture):
+                print('Existing model for architecture ' + architecture + ' not found; must be trained using --train')
+                exit()
+            model = models.load_model('./trained_' + architecture)
+
+        # Get images denoised by given NN architecture
+        denoised_attacked_images = model.predict(X_attacked_test)
+        denoised_unattacked_images = model.predict(X_unattacked_test)
     else:
-        if not os.path.exists('./trained_' + architecture):
-            print('Existing model for architecture ' + architecture + ' not found; must be trained using --train')
-            exit()
-        model = models.load_model('./trained_' + architecture)
+
+        # Get images that are slightly Gaussian blurred for non-NN baseline
+        denoised_attacked_images = []
+        for attacked_image in X_attacked_test:
+            denoised_attacked_images.append(gaussian_filter(attacked_image, sigma = 0.75))
+
+        denoised_unattacked_images = []
+        for unattacked_image in X_unattacked_test:
+            denoised_unattacked_images.append(gaussian_filter(unattacked_image, sigma = 0.75))
+        
+        denoised_attacked_images = np.asarray(denoised_attacked_images)
+        denoised_unattacked_images = np.asarray(denoised_unattacked_images)
 
     # Save a grid of test images for each of the following image types: attacked, unattacked, and denoised
     plot_image_grid(X_attacked_test[:100] * 255, save_grid_filename='attacked_imgs.png')
     plot_image_grid(X_unattacked_test[:100] * 255, save_grid_filename='unattacked_imgs.png')
-    plot_image_grid(model.predict(X_attacked_test)[:100] * 255, save_grid_filename='denoised_attacked_imgs_' + architecture + '.png')
-    plot_image_grid(model.predict(X_unattacked_test)[:100] * 255, save_grid_filename='denoised_unattacked_imgs_' + architecture + '.png')
+    plot_image_grid(denoised_attacked_images[:100] * 255, save_grid_filename='denoised_attacked_imgs_' + architecture + '.png')
+    plot_image_grid(denoised_unattacked_images[:100] * 255, save_grid_filename='denoised_unattacked_imgs_' + architecture + '.png')
