@@ -5,6 +5,7 @@ from tensorflow.keras import models
 from tensorflow.keras.models import Sequential
 from scipy.ndimage import gaussian_filter
 import numpy as np
+import visualkeras
 from matplotlib import pyplot as plt
 import pickle
 import sys
@@ -426,6 +427,9 @@ if __name__ == '__main__':
         # Get images denoised by given NN architecture
         denoised_attacked_images = model.predict(X_attacked_test)
         denoised_unattacked_images = model.predict(X_unattacked_test)
+
+        # Create image visualizing model architecture
+        visualkeras.layered_view(model, to_file = architecture + '_model_viz.png', legend = True, scale_xy = 1, scale_z = 1)
     else:
 
         # Get images that are slightly Gaussian blurred for non-NN baseline
