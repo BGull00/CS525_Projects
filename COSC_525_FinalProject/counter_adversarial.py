@@ -446,7 +446,7 @@ if __name__ == '__main__':
         denoised_unattacked_images = np.asarray(denoised_unattacked_images)
 
     # Save a grid of test images for each of the following image types: attacked, unattacked, and denoised
-    plot_image_grid(X_attacked_test[:100] * 255, save_grid_filename='attacked_imgs.png')
-    plot_image_grid(X_unattacked_test[:100] * 255, save_grid_filename='unattacked_imgs.png')
-    plot_image_grid(denoised_attacked_images[:100] * 255, save_grid_filename='denoised_attacked_imgs_' + architecture + '.png')
-    plot_image_grid(denoised_unattacked_images[:100] * 255, save_grid_filename='denoised_unattacked_imgs_' + architecture + '.png')
+    plot_image_grid(X_attacked_test[:9] * 255, save_grid_filename='attacked_imgs.png')
+    plot_image_grid(X_unattacked_test[:9] * 255, save_grid_filename='unattacked_imgs.png')
+    plot_image_grid(denoised_attacked_images[:9] * 255, save_grid_filename='denoised_attacked_imgs_' + architecture + '.png')
+    plot_image_grid(denoised_unattacked_images[:9] * 255, save_grid_filename='denoised_unattacked_imgs_' + architecture + '.png')
