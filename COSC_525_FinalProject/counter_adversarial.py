@@ -411,6 +411,7 @@ if __name__ == '__main__':
                 num_epochs = 1000
                 autoencoder_losses_train, discriminator_losses_train, autoencoder_losses_val, discriminator_losses_val = train_GAN_denoising_autoencoder(X_attacked_train, X_unattacked_train, X_attacked_test, X_unattacked_test, num_epochs, 256, autoencoder, discriminator)
                 plot_training_data([autoencoder_losses_train, discriminator_losses_train, autoencoder_losses_val, discriminator_losses_val], 'GAN Denoising Autoencoder Loss During Training', 'Loss', ['autoencoder train', 'discriminator train', 'autoencoder test', 'discriminator test'], 'GAN_loss_vs_epochs.png')
+                visualkeras.layered_view(discriminator, to_file = 'gan_discriminator_viz.png', legend = True, scale_xy = 1, scale_z = 1)
                 model = autoencoder
             
             if(architecture != 'gan'):
