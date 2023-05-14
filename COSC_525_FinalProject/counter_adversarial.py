@@ -25,18 +25,18 @@ def create_fully_conv_denoising_autoencoder(input_shape, should_log = False):
 
     model = Sequential()
 
-    model.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 1, padding='same', activation = 'relu', input_shape = input_shape))
+    model.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 1, padding = 'same', activation = 'relu', input_shape = input_shape))
     model.add(layers.BatchNormalization()) # H, W, 16
-    model.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 2, padding='same', activation = 'relu'))
-    model.add(layers.Conv2D(filters = 32, kernel_size = 3, strides = 1, padding='same', activation = 'relu'))
+    model.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 2, padding = 'same', activation = 'relu'))
+    model.add(layers.Conv2D(filters = 32, kernel_size = 3, strides = 1, padding = 'same', activation = 'relu'))
     model.add(layers.BatchNormalization()) # H/2, W/2, 32
-    model.add(layers.Conv2DTranspose(32, kernel_size = 3, activation="relu", strides=2, padding="same"))
-    model.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 1, padding='same', activation = 'relu'))
+    model.add(layers.Conv2DTranspose(filters = 32, kernel_size = 3, strides = 2, padding = 'same', activation = "relu"))
+    model.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 1, padding = 'same', activation = 'relu'))
     model.add(layers.BatchNormalization()) # H, W, 16
-    model.add(layers.Conv2D(filters = input_shape[2], kernel_size = 1, strides = 1, padding='same', activation = 'sigmoid'))
+    model.add(layers.Conv2D(filters = input_shape[2], kernel_size = 1, strides = 1, padding = 'same', activation = 'sigmoid'))
 
     lr_schedule = keras.optimizers.schedules.ExponentialDecay(initial_learning_rate = 0.01, decay_steps = 500, decay_rate = 0.5)
-    model.compile(optimizer=keras.optimizers.Adam(learning_rate=lr_schedule), loss='mean_squared_error')
+    model.compile(optimizer = keras.optimizers.Adam(learning_rate = lr_schedule), loss = 'mean_squared_error')
 
     if should_log:
         model.summary()
@@ -53,7 +53,7 @@ def create_fully_conn_denoising_autoencoder(input_shape, should_log = False):
     for val in input_shape:
         input_size *= val
 
-    model.add(layers.Input(shape=input_shape))
+    model.add(layers.Input(shape = input_shape))
     model.add(layers.Flatten())
     model.add(layers.Dense(units = 128, activation = 'relu'))
     model.add(layers.BatchNormalization())
@@ -61,7 +61,7 @@ def create_fully_conn_denoising_autoencoder(input_shape, should_log = False):
     model.add(layers.Reshape(input_shape))
 
     lr_schedule = keras.optimizers.schedules.ExponentialDecay(initial_learning_rate = 0.001, decay_steps = 1000, decay_rate = 0.5)
-    model.compile(optimizer=keras.optimizers.Adam(learning_rate=lr_schedule), loss='mean_squared_error')
+    model.compile(optimizer = keras.optimizers.Adam(learning_rate = lr_schedule), loss = 'mean_squared_error')
 
     if should_log:
         model.summary()
@@ -74,25 +74,25 @@ autoencoder followed by a discriminator that also uses convolutional layers '''
 def create_GAN_denoising_autoencoder(input_shape, should_log = False):
 
     autoencoder = Sequential()
-    autoencoder.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 1, padding='same', activation = 'relu', input_shape = input_shape))
+    autoencoder.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 1, padding = 'same', activation = 'relu', input_shape = input_shape))
     autoencoder.add(layers.BatchNormalization()) # H, W, 16
-    autoencoder.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 2, padding='same', activation = 'relu'))
-    autoencoder.add(layers.Conv2D(filters = 32, kernel_size = 3, strides = 1, padding='same', activation = 'relu'))
+    autoencoder.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 2, padding = 'same', activation = 'relu'))
+    autoencoder.add(layers.Conv2D(filters = 32, kernel_size = 3, strides = 1, padding = 'same', activation = 'relu'))
     autoencoder.add(layers.BatchNormalization()) # H/2, W/2, 32
-    autoencoder.add(layers.Conv2DTranspose(32, kernel_size = 3, activation="relu", strides=2, padding="same"))
-    autoencoder.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 1, padding='same', activation = 'relu'))
+    autoencoder.add(layers.Conv2DTranspose(filters = 32, kernel_size = 3, strides = 2, padding = 'same', activation = "relu"))
+    autoencoder.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 1, padding = 'same', activation = 'relu'))
     autoencoder.add(layers.BatchNormalization()) # H, W, 16
-    autoencoder.add(layers.Conv2D(filters = input_shape[2], kernel_size = 1, strides = 1, padding='same', activation = 'sigmoid'))
+    autoencoder.add(layers.Conv2D(filters = input_shape[2], kernel_size = 1, strides = 1, padding = 'same', activation = 'sigmoid'))
 
     if should_log:
         autoencoder.summary()
 
     discriminator = Sequential()
-    discriminator.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 1, padding='same', activation = layers.LeakyReLU(), input_shape = input_shape))
+    discriminator.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 1, padding = 'same', activation = layers.LeakyReLU(), input_shape = input_shape))
     discriminator.add(layers.BatchNormalization()) # H, W, 16
     discriminator.add(layers.Dropout(0.5))
-    discriminator.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 2, padding='same', activation = layers.LeakyReLU()))
-    discriminator.add(layers.Conv2D(filters = 32, kernel_size = 3, strides = 1, padding='same', activation = layers.LeakyReLU()))
+    discriminator.add(layers.Conv2D(filters = 16, kernel_size = 3, strides = 2, padding = 'same', activation = layers.LeakyReLU()))
+    discriminator.add(layers.Conv2D(filters = 32, kernel_size = 3, strides = 1, padding = 'same', activation = layers.LeakyReLU()))
     discriminator.add(layers.BatchNormalization()) # H/2, W/2, 32
     discriminator.add(layers.Dropout(0.5))
     discriminator.add(layers.Flatten())
@@ -129,10 +129,10 @@ def train_GAN_denoising_autoencoder_step(attacked_images, unattacked_images, aut
 
     # Perform training step
     with tf.GradientTape() as autoencoder_tape, tf.GradientTape() as discriminator_tape:
-        denoised_images = autoencoder(attacked_images, training=True)
+        denoised_images = autoencoder(attacked_images, training = True)
 
-        denoised_disc_output = discriminator(denoised_images, training=True)
-        unattacked_disc_output = discriminator(unattacked_images, training=True)
+        denoised_disc_output = discriminator(denoised_images, training = True)
+        unattacked_disc_output = discriminator(unattacked_images, training = True)
 
         autoencoder_loss, discriminator_loss = get_GAN_denoising_autoencoder_losses(unattacked_images, denoised_images, denoised_disc_output, unattacked_disc_output, mse, binary_cross_entropy)
 
@@ -152,8 +152,8 @@ def train_GAN_denoising_autoencoder(attacked_images_train, unattacked_images_tra
     binary_cross_entropy = keras.losses.BinaryCrossentropy()
 
     # Init Adam optimizers for both autoencoder and generator
-    autoencoder_optimizer = keras.optimizers.Adam(learning_rate=0.0001)
-    discriminator_optimizer = keras.optimizers.Adam(learning_rate=0.0001)
+    autoencoder_optimizer = keras.optimizers.Adam(learning_rate = 0.0001)
+    discriminator_optimizer = keras.optimizers.Adam(learning_rate = 0.0001)
 
     # Calculate number of batches per epoch
     num_batches_per_epoch = int(attacked_images_train.shape[0] / batch_size)
@@ -213,7 +213,7 @@ def loadAttackData(filename):
 '''
 Function to plot a grid of images given in a numpy array; credit https://stackoverflow.com/questions/20038648/writting-a-file-with-multiple-images-in-a-grid (user James Bond)
 '''
-def plot_image_grid(image_arr, save_grid_filename=None):
+def plot_image_grid(image_arr, save_grid_filename = None):
     plt.clf()
 
     result_figsize_resolution = 40 # 1 = 100px
@@ -225,7 +225,7 @@ def plot_image_grid(image_arr, save_grid_filename=None):
     grid_size = math.ceil(math.sqrt(images_count))
 
     # Create plt plot:
-    _, axes = plt.subplots(grid_size, grid_size, figsize=(result_figsize_resolution, result_figsize_resolution))
+    _, axes = plt.subplots(grid_size, grid_size, figsize = (result_figsize_resolution, result_figsize_resolution))
 
     # Plot every image in the grid
     current_image_number = 0
@@ -243,7 +243,7 @@ def plot_image_grid(image_arr, save_grid_filename=None):
 '''
 Function to plot a given image; credit https://github.com/Hyperparticle/one-pixel-attack-keras/blob/master/helper.py
 '''
-def plot_image(image, label_true=None, class_names=None, label_pred=None, save_img_filename=None):
+def plot_image(image, label_true = None, class_names = None, label_pred = None, save_img_filename = None):
     plt.clf()
 
     if image.ndim == 4 and image.shape[0] == 1:
@@ -324,7 +324,7 @@ def plot_training_data(data, title, ylabel, legend_labels, filename):
     plt.title(title)
     plt.ylabel(ylabel)
     plt.xlabel('Epoch')
-    plt.legend(legend_labels, loc='upper right')
+    plt.legend(legend_labels, loc = 'upper right')
 
     # Save plot as file with given file name
     plt.savefig(filename)
@@ -387,7 +387,7 @@ if __name__ == '__main__':
     y_train = np.asarray(y[int(len(y)/3):])
 
     # Load altered ResNet trained on CIFAR10 dataset using transfer learning
-    resnet_model = models.load_model('./trainedModel', compile=False)
+    resnet_model = models.load_model('./trainedModel', compile = False)
     resnet_model.compile()
 
     # Verify we got at least one attacked image
@@ -446,7 +446,7 @@ if __name__ == '__main__':
         denoised_unattacked_images = np.asarray(denoised_unattacked_images)
 
     # Save a grid of test images for each of the following image types: attacked, unattacked, and denoised
-    plot_image_grid(X_attacked_test[:9] * 255, save_grid_filename='attacked_imgs.png')
-    plot_image_grid(X_unattacked_test[:9] * 255, save_grid_filename='unattacked_imgs.png')
-    plot_image_grid(denoised_attacked_images[:9] * 255, save_grid_filename='denoised_attacked_imgs_' + architecture + '.png')
-    plot_image_grid(denoised_unattacked_images[:9] * 255, save_grid_filename='denoised_unattacked_imgs_' + architecture + '.png')
+    plot_image_grid(X_attacked_test[:9] * 255, save_grid_filename = 'attacked_imgs.png')
+    plot_image_grid(X_unattacked_test[:9] * 255, save_grid_filename = 'unattacked_imgs.png')
+    plot_image_grid(denoised_attacked_images[:9] * 255, save_grid_filename = 'denoised_attacked_imgs_' + architecture + '.png')
+    plot_image_grid(denoised_unattacked_images[:9] * 255, save_grid_filename = 'denoised_unattacked_imgs_' + architecture + '.png')
