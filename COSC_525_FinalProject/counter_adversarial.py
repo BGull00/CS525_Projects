@@ -386,10 +386,6 @@ if __name__ == '__main__':
     y_test = np.asarray(y[0:int(len(y)/3)])
     y_train = np.asarray(y[int(len(y)/3):])
 
-    # Load altered ResNet trained on CIFAR10 dataset using transfer learning
-    resnet_model = models.load_model('./trainedModel', compile = False)
-    resnet_model.compile()
-
     # Verify we got at least one attacked image
     if(len(X_attacked) < 1):
         print('Could not load attacked images')
